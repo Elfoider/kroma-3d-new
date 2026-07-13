@@ -2,29 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import {
+  FormEvent,
+  useEffect,
+  useState,
+} from "react";
+
+import { PRODUCTS } from "@/constants/products";
+import { createOrder } from "@/services/orders/createOrder";
+import type { SavedDesign } from "@/types/editor";
+import type { OrderFormData } from "@/types/order";
+
 import styles from "./order.module.css";
-
-type SavedDesign = {
-  productType: "taza" | "franela";
-  productName: string;
-  productColor: string;
-  customText: string;
-  textColor: string;
-  previewImage: string;
-  createdAt: string;
-};
-
-type OrderFormData = {
-  customerName: string;
-  phone: string;
-  email: string;
-  quantity: number;
-  size: string;
-  notes: string;
-};
 
 const initialFormData: OrderFormData = {
   customerName: "",
@@ -36,20 +25,37 @@ const initialFormData: OrderFormData = {
 };
 
 export default function OrderForm() {
-  const [design, setDesign] = useState<SavedDesign | null>(null);
-  const [formData, setFormData] = useState<OrderFormData>(initialFormData);
+  const [design, setDesign] =
+    useState<SavedDesign | null>(null);
+
+  const [formData, setFormData] =
+    useState<OrderFormData>(initialFormData);
+
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
+
+  const [createdOrderId, setCreatedOrderId] =
+    useState<string | null>(null);
 
   useEffect(() => {
-    const savedDesign = sessionStorage.getItem("kroma3d-current-design");
+    const savedDesign = sessionStorage.getItem(
+      "kroma3d-current-design",
+    );
 
     if (savedDesign) {
       try {
-        setDesign(JSON.parse(savedDesign) as SavedDesign);
+        const parsedDesign = JSON.parse(
+          savedDesign,
+        ) as SavedDesign;
+
+        setDesign(parsedDesign);
       } catch (error) {
-        console.error("No se pudo leer el diseño:", error);
+        console.error(
+          "No se pudo leer el diseño guardado:",
+          error,
+        );
       }
     }
 
@@ -66,7 +72,9 @@ export default function OrderForm() {
     }));
   }
 
-  async function submitOrder(event: FormEvent<HTMLFormElement>) {
+  async function submitOrder(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     if (!design) {
@@ -74,15 +82,25 @@ export default function OrderForm() {
       return;
     }
 
-    if (!formData.customerName.trim() || !formData.phone.trim()) {
-      alert("Completa tu nombre y teléfono.");
+    if (!formData.customerName.trim()) {
+      alert("Escribe tu nombre completo.");
+      return;
+    }
+
+    if (!formData.phone.trim()) {
+      alert("Escribe tu número de teléfono.");
+      return;
+    }
+
+    if (formData.quantity < 1) {
+      alert("La cantidad debe ser mayor que cero.");
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      const orderData = {
+      const orderId = await createOrder({
         customer: {
           name: formData.customerName.trim(),
           phone: formData.phone.trim(),
@@ -94,41 +112,44 @@ export default function OrderForm() {
           name: design.productName,
           color: design.productColor,
           quantity: formData.quantity,
-          size: design.productType === "franela" ? formData.size : null,
+
+          size:
+            design.productType === "franela"
+              ? formData.size
+              : null,
         },
 
         design: {
           customText: design.customText,
           textColor: design.textColor,
 
-          // Temporalmente no guardaremos la imagen en Firestore.
-          // La subiremos a Storage en el siguiente paso.
-          previewImage: "",
+          // La imagen se subirá a Firebase Storage
+          // en una etapa posterior.
+          previewImageUrl: "",
         },
 
         notes: formData.notes.trim(),
         status: "pendiente",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
+      });
 
-      const documentReference = await addDoc(
-        collection(db, "orders"),
-        orderData,
+      sessionStorage.setItem(
+        "kroma3d-last-order-id",
+        orderId,
       );
 
-      console.log("Pedido guardado correctamente:", documentReference.id);
+      sessionStorage.removeItem(
+        "kroma3d-current-design",
+      );
 
-      setCreatedOrderId(documentReference.id);
-
-      sessionStorage.setItem("kroma3d-last-order-id", documentReference.id);
-
-      sessionStorage.removeItem("kroma3d-current-design");
+      setCreatedOrderId(orderId);
     } catch (error) {
-      console.error("Error completo al guardar el pedido:", error);
+      console.error(
+        "Error al guardar el pedido:",
+        error,
+      );
 
       alert(
-        "No se pudo guardar el pedido. Abre la consola del navegador para revisar el error.",
+        "No se pudo guardar el pedido. Verifica la conexión con Firebase e intenta nuevamente.",
       );
     } finally {
       setIsSubmitting(false);
@@ -138,6 +159,13 @@ export default function OrderForm() {
   if (isLoading) {
     return (
       <main className={styles.messagePage}>
+        <Image
+          src="/logo-kroma-3d.png"
+          alt="KROMA 3D"
+          width={80}
+          height={80}
+        />
+
         <p>Cargando diseño...</p>
       </main>
     );
@@ -161,16 +189,21 @@ export default function OrderForm() {
           <h1>¡Recibimos tu solicitud!</h1>
 
           <p>
-            Tu diseño fue guardado correctamente. Nos pondremos en contacto
-            contigo para revisar los detalles y confirmar la producción.
+            Tu pedido fue registrado correctamente. Nos
+            pondremos en contacto contigo para revisar el
+            diseño y confirmar la producción.
           </p>
 
           <div className={styles.orderCode}>
             <span>Código del pedido</span>
+
             <strong>{createdOrderId}</strong>
           </div>
 
-          <Link href="/" className={styles.primaryLink}>
+          <Link
+            href="/"
+            className={styles.primaryLink}
+          >
             Volver al inicio
           </Link>
         </div>
@@ -181,18 +214,33 @@ export default function OrderForm() {
   if (!design) {
     return (
       <main className={styles.messagePage}>
-        <Image src="/logo-kroma-3d.png" alt="KROMA 3D" width={90} height={90} />
+        <Image
+          src="/logo-kroma-3d.png"
+          alt="KROMA 3D"
+          width={90}
+          height={90}
+        />
 
         <h1>No encontramos un diseño</h1>
 
-        <p>Primero debes personalizar una taza o una franela.</p>
+        <p>
+          Primero debes personalizar una taza o una
+          franela.
+        </p>
 
-        <Link href="/#productos" className={styles.primaryLink}>
+        <Link
+          href="/#productos"
+          className={styles.primaryLink}
+        >
           Seleccionar producto
         </Link>
       </main>
     );
   }
+
+  const selectedProduct =
+    PRODUCTS[design.productType];
+
   return (
     <main className={styles.page}>
       <header className={styles.header}>
@@ -222,8 +270,13 @@ export default function OrderForm() {
         <div className={styles.previewColumn}>
           <div className={styles.sectionHeading}>
             <span>VISTA PREVIA</span>
+
             <h1>Tu producto personalizado</h1>
-            <p>Verifica el diseño antes de enviar el pedido.</p>
+
+            <p>
+              Verifica el diseño antes de enviar el
+              pedido.
+            </p>
           </div>
 
           <div className={styles.previewCard}>
@@ -243,7 +296,10 @@ export default function OrderForm() {
 
             <div>
               <span>Texto</span>
-              <strong>{design.customText || "Sin texto"}</strong>
+
+              <strong>
+                {design.customText || "Sin texto"}
+              </strong>
             </div>
 
             <div>
@@ -252,10 +308,14 @@ export default function OrderForm() {
               <div className={styles.colorSummary}>
                 <span
                   style={{
-                    backgroundColor: design.productColor,
+                    backgroundColor:
+                      design.productColor,
                   }}
                 />
-                <strong>{design.productColor.toUpperCase()}</strong>
+
+                <strong>
+                  {design.productColor.toUpperCase()}
+                </strong>
               </div>
             </div>
           </div>
@@ -264,20 +324,30 @@ export default function OrderForm() {
         <div className={styles.formColumn}>
           <div className={styles.formHeading}>
             <span>DATOS DEL CLIENTE</span>
+
             <h2>Completa tu pedido</h2>
+
             <p>
-              Introduce la información necesaria para procesar la solicitud.
+              Introduce la información necesaria para
+              procesar la solicitud.
             </p>
           </div>
 
-          <form className={styles.form} onSubmit={submitOrder}>
+          <form
+            className={styles.form}
+            onSubmit={submitOrder}
+          >
             <label>
               Nombre completo
+
               <input
                 type="text"
                 value={formData.customerName}
                 onChange={(event) =>
-                  updateField("customerName", event.target.value)
+                  updateField(
+                    "customerName",
+                    event.target.value,
+                  )
                 }
                 placeholder="Ejemplo: Juan Pérez"
                 required
@@ -286,10 +356,16 @@ export default function OrderForm() {
 
             <label>
               Teléfono o WhatsApp
+
               <input
                 type="tel"
                 value={formData.phone}
-                onChange={(event) => updateField("phone", event.target.value)}
+                onChange={(event) =>
+                  updateField(
+                    "phone",
+                    event.target.value,
+                  )
+                }
                 placeholder="+58 412 0000000"
                 required
               />
@@ -297,10 +373,16 @@ export default function OrderForm() {
 
             <label>
               Correo electrónico
+
               <input
                 type="email"
                 value={formData.email}
-                onChange={(event) => updateField("email", event.target.value)}
+                onChange={(event) =>
+                  updateField(
+                    "email",
+                    event.target.value,
+                  )
+                }
                 placeholder="cliente@correo.com"
               />
             </label>
@@ -308,35 +390,50 @@ export default function OrderForm() {
             <div className={styles.formRow}>
               <label>
                 Cantidad
+
                 <input
                   type="number"
                   min="1"
                   max="100"
                   value={formData.quantity}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const quantity = Number(
+                      event.target.value,
+                    );
+
                     updateField(
                       "quantity",
-                      Math.max(1, Number(event.target.value)),
-                    )
-                  }
+                      Number.isNaN(quantity)
+                        ? 1
+                        : Math.max(1, quantity),
+                    );
+                  }}
                 />
               </label>
 
               {design.productType === "franela" && (
                 <label>
                   Talla
+
                   <select
                     value={formData.size}
                     onChange={(event) =>
-                      updateField("size", event.target.value)
+                      updateField(
+                        "size",
+                        event.target.value,
+                      )
                     }
                   >
-                    <option value="XS">XS</option>
-                    <option value="S">S</option>
-                    <option value="M">M</option>
-                    <option value="L">L</option>
-                    <option value="XL">XL</option>
-                    <option value="XXL">XXL</option>
+                    {selectedProduct.sizes?.map(
+                      (size) => (
+                        <option
+                          key={size}
+                          value={size}
+                        >
+                          {size}
+                        </option>
+                      ),
+                    )}
                   </select>
                 </label>
               )}
@@ -344,9 +441,15 @@ export default function OrderForm() {
 
             <label>
               Observaciones
+
               <textarea
                 value={formData.notes}
-                onChange={(event) => updateField("notes", event.target.value)}
+                onChange={(event) =>
+                  updateField(
+                    "notes",
+                    event.target.value,
+                  )
+                }
                 placeholder="Agrega instrucciones especiales..."
                 rows={5}
                 maxLength={500}
@@ -357,8 +460,9 @@ export default function OrderForm() {
               <span>i</span>
 
               <p>
-                El pedido todavía no se enviará a producción. Primero será
-                revisado y confirmado.
+                El pedido todavía no será enviado a
+                producción. Primero será revisado y
+                confirmado.
               </p>
             </div>
 

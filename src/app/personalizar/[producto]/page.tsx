@@ -1,4 +1,7 @@
 import { notFound } from "next/navigation";
+
+import { isValidProductType } from "@/constants/products";
+
 import PersonalizerEditor from "./PersonalizerEditor";
 
 type PersonalizerPageProps = {
@@ -7,16 +10,16 @@ type PersonalizerPageProps = {
   }>;
 };
 
-const validProducts = ["taza", "franela"];
-
 export default async function PersonalizerPage({
   params,
 }: PersonalizerPageProps) {
   const { producto } = await params;
 
-  if (!validProducts.includes(producto)) {
+  if (!isValidProductType(producto)) {
     notFound();
   }
 
-  return <PersonalizerEditor productType={producto as "taza" | "franela"} />;
+  return (
+    <PersonalizerEditor productType={producto} />
+  );
 }

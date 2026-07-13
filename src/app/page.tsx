@@ -1,29 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const products = [
-  {
-    id: "taza",
-    name: "Taza personalizada",
-    description:
-      "Crea diseños envolventes para tazas de 11 Oz y visualízalos antes de realizar tu pedido.",
-    icon: "☕",
-    available: true,
-  },
-  {
-    id: "franela",
-    name: "Franela personalizada",
-    description:
-      "Sube imágenes, agrega textos y crea una franela personalizada con vista previa.",
-    icon: "👕",
-    available: true,
-  },
-];
+import { PRODUCT_LIST } from "@/constants/products";
 
 export default function HomePage() {
   return (
     <main className="home-page">
-      <div className="background-effects" aria-hidden="true">
+      <div
+        className="background-effects"
+        aria-hidden="true"
+      >
         <div className="glow glow-purple" />
         <div className="glow glow-blue" />
         <div className="grid-background" />
@@ -34,17 +20,35 @@ export default function HomePage() {
           <Image
             src="/logo-kroma-3d.png"
             alt="Logo de KROMA 3D"
-            width={250}
-            height={80}
+            width={58}
+            height={58}
             priority
             className="brand-logo"
           />
+
+          <div className="brand-text">
+            <span className="brand-name">KROMA 3D</span>
+
+            <span className="brand-subtitle">
+              Personalización visual
+            </span>
+          </div>
         </Link>
 
-        <nav className="navigation" aria-label="Navegación principal">
+        <nav
+          className="navigation"
+          aria-label="Navegación principal"
+        >
           <Link href="#productos">Productos</Link>
-          <Link href="#como-funciona">Cómo funciona</Link>
-          <button type="button" className="login-button">
+
+          <Link href="#como-funciona">
+            Cómo funciona
+          </Link>
+
+          <button
+            type="button"
+            className="login-button"
+          >
             Administrador
           </button>
         </nav>
@@ -54,6 +58,7 @@ export default function HomePage() {
         <div className="hero-content">
           <div className="hero-badge">
             <span className="badge-dot" />
+
             Plataforma de personalización 3D
           </div>
 
@@ -63,17 +68,24 @@ export default function HomePage() {
           </h1>
 
           <p className="hero-description">
-            Personaliza tazas y franelas, agrega imágenes y textos, y
-            visualiza el resultado antes de realizar tu pedido.
+            Personaliza tazas y franelas, agrega imágenes
+            y textos, y visualiza el resultado antes de
+            realizar tu pedido.
           </p>
 
           <div className="hero-actions">
-            <Link href="#productos" className="primary-button">
+            <Link
+              href="#productos"
+              className="primary-button"
+            >
               Comenzar a diseñar
               <span aria-hidden="true">→</span>
             </Link>
 
-            <Link href="#como-funciona" className="secondary-button">
+            <Link
+              href="#como-funciona"
+              className="secondary-button"
+            >
               Ver cómo funciona
             </Link>
           </div>
@@ -131,19 +143,31 @@ export default function HomePage() {
             </div>
 
             <div className="editor-toolbar">
-              <button type="button" aria-label="Agregar imagen">
+              <button
+                type="button"
+                aria-label="Agregar imagen"
+              >
                 ▧
               </button>
 
-              <button type="button" aria-label="Agregar texto">
+              <button
+                type="button"
+                aria-label="Agregar texto"
+              >
                 T
               </button>
 
-              <button type="button" aria-label="Rotar elemento">
+              <button
+                type="button"
+                aria-label="Rotar elemento"
+              >
                 ↻
               </button>
 
-              <button type="button" aria-label="Cambiar color">
+              <button
+                type="button"
+                aria-label="Cambiar color"
+              >
                 ◉
               </button>
             </div>
@@ -151,67 +175,114 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="productos" className="products-section">
+      <section
+        id="productos"
+        className="products-section"
+      >
         <div className="section-heading">
           <span>NUESTROS PRODUCTOS</span>
+
           <h2>¿Qué deseas personalizar?</h2>
+
           <p>
-            Selecciona un producto para comenzar a crear tu diseño.
+            Selecciona un producto para comenzar a crear
+            tu diseño.
           </p>
         </div>
 
         <div className="products-grid">
-          {products.map((product) => (
-            <article className="product-card" key={product.id}>
-              <div className="product-icon">{product.icon}</div>
+          {PRODUCT_LIST.map((product) => (
+            <article
+              className="product-card"
+              key={product.id}
+            >
+              <div className="product-icon">
+                {product.icon}
+              </div>
 
               <div className="product-information">
-                <span className="available-label">Disponible</span>
+                <span className="available-label">
+                  {product.available
+                    ? "Disponible"
+                    : "Próximamente"}
+                </span>
+
                 <h3>{product.name}</h3>
+
                 <p>{product.description}</p>
               </div>
 
-              <Link
-                href={`/personalizar/${product.id}`}
-                className="product-link"
-              >
-                Personalizar
-                <span aria-hidden="true">→</span>
-              </Link>
+              {product.available ? (
+                <Link
+                  href={`/personalizar/${product.id}`}
+                  className="product-link"
+                >
+                  Personalizar
+                  <span aria-hidden="true">→</span>
+                </Link>
+              ) : (
+                <span className="product-link">
+                  Próximamente
+                </span>
+              )}
             </article>
           ))}
         </div>
       </section>
 
-      <section id="como-funciona" className="steps-section">
+      <section
+        id="como-funciona"
+        className="steps-section"
+      >
         <div className="section-heading">
           <span>PROCESO SENCILLO</span>
+
           <h2>Crea tu producto en pocos pasos</h2>
         </div>
 
         <div className="steps-grid">
           <article className="step-card">
             <span className="step-number">01</span>
+
             <h3>Selecciona</h3>
-            <p>Elige la taza o franela que deseas personalizar.</p>
+
+            <p>
+              Elige la taza o franela que deseas
+              personalizar.
+            </p>
           </article>
 
           <article className="step-card">
             <span className="step-number">02</span>
+
             <h3>Diseña</h3>
-            <p>Sube imágenes, agrega textos y organiza tu composición.</p>
+
+            <p>
+              Sube imágenes, agrega textos y organiza tu
+              composición.
+            </p>
           </article>
 
           <article className="step-card">
             <span className="step-number">03</span>
+
             <h3>Visualiza</h3>
-            <p>Observa una vista previa del producto personalizado.</p>
+
+            <p>
+              Observa una vista previa del producto
+              personalizado.
+            </p>
           </article>
 
           <article className="step-card">
             <span className="step-number">04</span>
+
             <h3>Confirma</h3>
-            <p>Completa tus datos y envía el pedido desde la plataforma.</p>
+
+            <p>
+              Completa tus datos y envía el pedido desde
+              la plataforma.
+            </p>
           </article>
         </div>
       </section>
@@ -231,7 +302,9 @@ export default function HomePage() {
           </div>
         </div>
 
-        <p>© 2026 KROMA 3D. Todos los derechos reservados.</p>
+        <p>
+          © 2026 KROMA 3D. Todos los derechos reservados.
+        </p>
       </footer>
     </main>
   );
