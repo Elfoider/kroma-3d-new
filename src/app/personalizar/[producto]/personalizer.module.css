@@ -1,0 +1,697 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(123, 46, 255, 0.16),
+      transparent 28%
+    ),
+    radial-gradient(circle at 90% 70%, rgba(0, 194, 255, 0.1), transparent 25%),
+    #0b1020;
+  color: #f4f7ff;
+}
+
+.header {
+  width: min(1500px, calc(100% - 40px));
+  min-height: 78px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand img {
+  object-fit: contain;
+  filter: drop-shadow(0 0 15px rgba(123, 46, 255, 0.45));
+}
+
+.brand div {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand strong {
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 16px;
+  letter-spacing: 0.8px;
+}
+
+.brand span {
+  margin-top: 3px;
+  color: #8f9ab1;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.backButton {
+  padding: 10px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #c5cee0;
+  font-size: 13px;
+  transition: 0.2s ease;
+}
+
+.backButton:hover {
+  border-color: rgba(123, 46, 255, 0.6);
+  color: white;
+}
+
+.editorLayout {
+  width: min(1500px, calc(100% - 40px));
+  min-height: calc(100vh - 78px);
+  margin: 0 auto;
+  padding: 28px 0 45px;
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.sidebar {
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(17, 24, 43, 0.82);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(18px);
+}
+
+.sidebarHeading {
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebarHeading > span {
+  color: #00c2ff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+
+.sidebarHeading h1 {
+  margin-top: 9px;
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 21px;
+}
+
+.sidebarHeading p {
+  margin-top: 10px;
+  color: #98a3ba;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.controlGroup {
+  padding: 22px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.controlGroup h2 {
+  margin-bottom: 13px;
+  font-size: 13px;
+}
+
+.controlGroup small {
+  display: block;
+  margin-top: 9px;
+  color: #768197;
+  font-size: 10px;
+}
+
+.uploadButton {
+  min-height: 48px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px dashed rgba(123, 46, 255, 0.65);
+  border-radius: 11px;
+  background: rgba(123, 46, 255, 0.09);
+  color: #d8c9ff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.uploadButton:hover {
+  background: rgba(123, 46, 255, 0.17);
+}
+
+.uploadButton input {
+  display: none;
+}
+
+.uploadButton span {
+  font-size: 20px;
+}
+
+.textInput {
+  width: 100%;
+  height: 45px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  outline: none;
+  background: #0e1526;
+  color: white;
+}
+
+.textInput:focus {
+  border-color: #7b2eff;
+  box-shadow: 0 0 0 3px rgba(123, 46, 255, 0.12);
+}
+
+.colorField {
+  margin-top: 14px;
+}
+
+.colorField label {
+  display: block;
+  margin-bottom: 8px;
+  color: #9ba6bc;
+  font-size: 11px;
+}
+
+.colorField > div {
+  height: 42px;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  background: #0e1526;
+}
+
+.colorField input {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.colorField span {
+  color: #a6b0c5;
+  font-size: 11px;
+}
+
+.productColors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.productColors button {
+  width: 34px;
+  height: 34px;
+  border: 3px solid #1b2338;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+  transition: 0.2s ease;
+}
+
+.productColors button:hover {
+  transform: scale(1.08);
+}
+
+.productColors .selectedColor {
+  box-shadow:
+    0 0 0 2px #00c2ff,
+    0 0 18px rgba(0, 194, 255, 0.35);
+}
+
+.selectionStatus {
+  min-height: 42px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #9ea8bd;
+  font-size: 11px;
+}
+
+.elementControls {
+  margin-top: 11px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.elementControls button {
+  height: 39px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  background: #1b2338;
+  color: white;
+  font-size: 17px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.elementControls button:hover:not(:disabled) {
+  border-color: #7b2eff;
+  background: rgba(123, 46, 255, 0.18);
+}
+
+.elementControls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.elementControls .deleteButton:hover:not(:disabled) {
+  border-color: #ff2e88;
+  background: rgba(255, 46, 136, 0.14);
+}
+
+.resetButton {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 10px;
+  background: transparent;
+  color: #aeb8ca;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.resetButton:hover {
+  border-color: #ff2e88;
+  color: white;
+}
+
+.workspaceSection {
+  min-width: 0;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(17, 24, 43, 0.66);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.25);
+}
+
+.workspaceHeader {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.workspaceHeader span {
+  color: #00c2ff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+}
+
+.workspaceHeader h2 {
+  margin-top: 5px;
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 20px;
+}
+
+.workspaceHeader p {
+  color: #8590a5;
+  font-size: 11px;
+}
+
+.workspace {
+  position: relative;
+  min-height: 620px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(123, 46, 255, 0.15),
+      transparent 42%
+    ),
+    #080d19;
+  touch-action: none;
+  user-select: none;
+}
+
+.workspaceGrid {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px
+    );
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+.captureArea {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(123, 46, 255, 0.15),
+      transparent 42%
+    ),
+    #080d19;
+}
+
+.continueButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+.cup {
+  position: relative;
+  z-index: 2;
+  width: 300px;
+  height: 375px;
+  border-radius: 22px 22px 65px 65px;
+  box-shadow:
+    inset -24px 0 35px rgba(0, 0, 0, 0.2),
+    inset 18px 0 25px rgba(255, 255, 255, 0.2),
+    0 40px 70px rgba(0, 0, 0, 0.38);
+  transition: background-color 0.2s ease;
+}
+
+.cupTop {
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 100%;
+  height: 28px;
+  border-radius: 50%;
+  background: #dfe5ef;
+  box-shadow: inset 0 9px 10px rgba(0, 0, 0, 0.24);
+}
+
+.cupHandle {
+  position: absolute;
+  top: 90px;
+  right: -112px;
+  width: 142px;
+  height: 170px;
+  padding: 23px;
+  border-radius: 0 95px 95px 0;
+  background: #dfe5ef;
+  box-shadow: 12px 15px 30px rgba(0, 0, 0, 0.22);
+}
+
+.cupHandle div {
+  width: 100%;
+  height: 100%;
+  border-radius: 0 70px 70px 0;
+}
+
+.shirtContainer {
+  position: relative;
+  z-index: 2;
+  width: 470px;
+  height: 480px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.shirt {
+  position: relative;
+  width: 285px;
+  height: 430px;
+  margin-top: 20px;
+  border-radius: 20px 20px 38px 38px;
+  box-shadow:
+    inset -20px 0 28px rgba(0, 0, 0, 0.18),
+    inset 18px 0 28px rgba(255, 255, 255, 0.12),
+    0 42px 75px rgba(0, 0, 0, 0.38);
+}
+
+.shirtSleeve {
+  position: absolute;
+  top: 7px;
+  width: 130px;
+  height: 205px;
+  border-radius: 28px;
+  z-index: -1;
+}
+
+.leftSleeve {
+  left: -92px;
+  transform: rotate(28deg);
+}
+
+.rightSleeve {
+  right: -92px;
+  transform: rotate(-28deg);
+}
+
+.shirtNeck {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 105px;
+  height: 58px;
+  border-radius: 0 0 60px 60px;
+  background: #080d19;
+  transform: translateX(-50%);
+  box-shadow: inset 0 -5px 9px rgba(255, 255, 255, 0.08);
+}
+
+.designArea {
+  position: absolute;
+  top: 65px;
+  left: 50%;
+  width: 72%;
+  height: 68%;
+  transform: translateX(-50%);
+  overflow: visible;
+}
+
+.safeArea {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed rgba(123, 46, 255, 0.65);
+  pointer-events: none;
+}
+
+.safeArea span {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  color: rgba(123, 46, 255, 0.95);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.designElement,
+.designText {
+  position: absolute;
+  z-index: 4;
+  cursor: grab;
+  transform-origin: center;
+  touch-action: none;
+}
+
+.designElement:active,
+.designText:active {
+  cursor: grabbing;
+}
+
+.designElement {
+  width: 115px;
+  height: 115px;
+  padding: 4px;
+}
+
+.designElement img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.designText {
+  width: max-content;
+  max-width: 210px;
+  padding: 5px 8px;
+  font-family: var(--font-orbitron), sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.selectedElement {
+  outline: 2px dashed #00c2ff;
+  outline-offset: 5px;
+}
+
+.productShadow {
+  position: absolute;
+  bottom: 61px;
+  z-index: 1;
+  width: 370px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  filter: blur(18px);
+}
+
+.bottomActions {
+  min-height: 72px;
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.bottomActions > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #8994aa;
+  font-size: 11px;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #24d79a;
+  box-shadow: 0 0 10px rgba(36, 215, 154, 0.8);
+}
+
+.continueButton {
+  min-height: 46px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #7b2eff, #5d18dc);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(123, 46, 255, 0.3);
+  transition: 0.2s ease;
+}
+
+.continueButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 35px rgba(123, 46, 255, 0.42);
+}
+
+@media (max-width: 1050px) {
+  .editorLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 25px;
+  }
+
+  .sidebarHeading,
+  .resetButton {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .header,
+  .editorLayout {
+    width: min(100% - 24px, 1500px);
+  }
+
+  .brand span {
+    display: none;
+  }
+
+  .backButton {
+    font-size: 0;
+  }
+
+  .backButton::after {
+    content: "← Volver";
+    font-size: 12px;
+  }
+
+  .sidebar {
+    display: block;
+    padding: 20px;
+  }
+
+  .workspaceSection {
+    padding: 14px;
+  }
+
+  .workspaceHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .workspace {
+    min-height: 500px;
+  }
+
+  .cup {
+    width: 220px;
+    height: 300px;
+  }
+
+  .cupHandle {
+    top: 72px;
+    right: -84px;
+    width: 105px;
+    height: 135px;
+    padding: 18px;
+  }
+
+  .shirtContainer {
+    transform: scale(0.72);
+  }
+
+  .bottomActions {
+    padding: 18px 0 4px;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .continueButton {
+    justify-content: center;
+  }
+}

@@ -1,65 +1,238 @@
 import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+const products = [
+  {
+    id: "taza",
+    name: "Taza personalizada",
+    description:
+      "Crea diseños envolventes para tazas de 11 Oz y visualízalos antes de realizar tu pedido.",
+    icon: "☕",
+    available: true,
+  },
+  {
+    id: "franela",
+    name: "Franela personalizada",
+    description:
+      "Sube imágenes, agrega textos y crea una franela personalizada con vista previa.",
+    icon: "👕",
+    available: true,
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="home-page">
+      <div className="background-effects" aria-hidden="true">
+        <div className="glow glow-purple" />
+        <div className="glow glow-blue" />
+        <div className="grid-background" />
+      </div>
+
+      <header className="navbar">
+        <Link href="/" className="brand">
+          <Image
+            src="/logo-kroma-3d.png"
+            alt="Logo de KROMA 3D"
+            width={250}
+            height={80}
+            priority
+            className="brand-logo"
+          />
+        </Link>
+
+        <nav className="navigation" aria-label="Navegación principal">
+          <Link href="#productos">Productos</Link>
+          <Link href="#como-funciona">Cómo funciona</Link>
+          <button type="button" className="login-button">
+            Administrador
+          </button>
+        </nav>
+      </header>
+
+      <section className="hero">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <span className="badge-dot" />
+            Plataforma de personalización 3D
+          </div>
+
+          <h1>
+            Convierte tus ideas en
+            <span> productos únicos.</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="hero-description">
+            Personaliza tazas y franelas, agrega imágenes y textos, y
+            visualiza el resultado antes de realizar tu pedido.
+          </p>
+
+          <div className="hero-actions">
+            <Link href="#productos" className="primary-button">
+              Comenzar a diseñar
+              <span aria-hidden="true">→</span>
+            </Link>
+
+            <Link href="#como-funciona" className="secondary-button">
+              Ver cómo funciona
+            </Link>
+          </div>
+
+          <div className="hero-features">
+            <div>
+              <span>✓</span>
+              Diseño en tiempo real
+            </div>
+
+            <div>
+              <span>✓</span>
+              Vista previa 3D
+            </div>
+
+            <div>
+              <span>✓</span>
+              Pedido sencillo
+            </div>
+          </div>
+        </div>
+
+        <div className="hero-visual">
+          <div className="visual-orbit orbit-one" />
+          <div className="visual-orbit orbit-two" />
+
+          <div className="visual-card">
+            <div className="visual-card-header">
+              <span>Vista previa</span>
+
+              <div className="window-controls">
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+
+            <div className="product-preview">
+              <div className="preview-glow" />
+
+              <div className="mockup-cup">
+                <div className="cup-design">
+                  <Image
+                    src="/logo-kroma-3d.png"
+                    alt=""
+                    width={105}
+                    height={105}
+                  />
+                </div>
+
+                <div className="cup-handle" />
+              </div>
+
+              <div className="preview-shadow" />
+            </div>
+
+            <div className="editor-toolbar">
+              <button type="button" aria-label="Agregar imagen">
+                ▧
+              </button>
+
+              <button type="button" aria-label="Agregar texto">
+                T
+              </button>
+
+              <button type="button" aria-label="Rotar elemento">
+                ↻
+              </button>
+
+              <button type="button" aria-label="Cambiar color">
+                ◉
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="productos" className="products-section">
+        <div className="section-heading">
+          <span>NUESTROS PRODUCTOS</span>
+          <h2>¿Qué deseas personalizar?</h2>
+          <p>
+            Selecciona un producto para comenzar a crear tu diseño.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="products-grid">
+          {products.map((product) => (
+            <article className="product-card" key={product.id}>
+              <div className="product-icon">{product.icon}</div>
+
+              <div className="product-information">
+                <span className="available-label">Disponible</span>
+                <h3>{product.name}</h3>
+                <p>{product.description}</p>
+              </div>
+
+              <Link
+                href={`/personalizar/${product.id}`}
+                className="product-link"
+              >
+                Personalizar
+                <span aria-hidden="true">→</span>
+              </Link>
+            </article>
+          ))}
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section id="como-funciona" className="steps-section">
+        <div className="section-heading">
+          <span>PROCESO SENCILLO</span>
+          <h2>Crea tu producto en pocos pasos</h2>
+        </div>
+
+        <div className="steps-grid">
+          <article className="step-card">
+            <span className="step-number">01</span>
+            <h3>Selecciona</h3>
+            <p>Elige la taza o franela que deseas personalizar.</p>
+          </article>
+
+          <article className="step-card">
+            <span className="step-number">02</span>
+            <h3>Diseña</h3>
+            <p>Sube imágenes, agrega textos y organiza tu composición.</p>
+          </article>
+
+          <article className="step-card">
+            <span className="step-number">03</span>
+            <h3>Visualiza</h3>
+            <p>Observa una vista previa del producto personalizado.</p>
+          </article>
+
+          <article className="step-card">
+            <span className="step-number">04</span>
+            <h3>Confirma</h3>
+            <p>Completa tus datos y envía el pedido desde la plataforma.</p>
+          </article>
+        </div>
+      </section>
+
+      <footer className="footer">
+        <div className="footer-brand">
+          <Image
+            src="/logo-kroma-3d.png"
+            alt="KROMA 3D"
+            width={42}
+            height={42}
+          />
+
+          <div>
+            <strong>KROMA 3D</strong>
+            <span>Tu idea, llevada a la realidad.</span>
+          </div>
+        </div>
+
+        <p>© 2026 KROMA 3D. Todos los derechos reservados.</p>
+      </footer>
+    </main>
   );
 }
