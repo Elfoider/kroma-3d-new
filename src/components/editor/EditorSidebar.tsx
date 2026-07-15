@@ -1,20 +1,22 @@
 import type { ChangeEvent } from "react";
-
+import ShortcutsHelp from "./ShortcutsHelp";
 import type { EditorElement } from "@/types/editor";
 import type { ProductDefinition } from "@/types/product";
 
 import ElementToolbar from "./ElementToolbar";
+import LayersPanel from "./LayersPanel";
 
 import styles from "../../app/personalizar/[producto]/personalizer.module.css";
 
 type EditorSidebarProps = {
   product: ProductDefinition;
   productColor: string;
-  selectedElement: EditorElement | null;
 
-  onImageUpload: (
-    event: ChangeEvent<HTMLInputElement>,
-  ) => void;
+  elements: EditorElement[];
+  selectedElement: EditorElement | null;
+  selectedElementId: string | null;
+
+  onImageUpload: (event: ChangeEvent<HTMLInputElement>) => void;
 
   onAddText: () => void;
   onTextChange: (value: string) => void;
@@ -25,8 +27,17 @@ type EditorSidebarProps = {
   onIncreaseElement: () => void;
   onRotateElement: () => void;
   onDuplicateElement: () => void;
-  onToggleElementLock: () => void;
-  onDeleteElement: () => void;
+  onToggleSelectedElementLock: () => void;
+  onDeleteSelectedElement: () => void;
+
+  onSelectElement: (elementId: string) => void;
+  onToggleElementVisibility: (elementId: string) => void;
+  onToggleElementLock: (elementId: string) => void;
+  onMoveElementUp: (elementId: string) => void;
+  onMoveElementDown: (elementId: string) => void;
+  onBringElementToFront: (elementId: string) => void;
+  onSendElementToBack: (elementId: string) => void;
+  onDeleteElementById: (elementId: string) => void;
 
   onResetDesign: () => void;
 };
@@ -34,7 +45,9 @@ type EditorSidebarProps = {
 export default function EditorSidebar({
   product,
   productColor,
+  elements,
   selectedElement,
+  selectedElementId,
   onImageUpload,
   onAddText,
   onTextChange,
@@ -44,14 +57,20 @@ export default function EditorSidebar({
   onIncreaseElement,
   onRotateElement,
   onDuplicateElement,
+  onToggleSelectedElementLock,
+  onDeleteSelectedElement,
+  onSelectElement,
+  onToggleElementVisibility,
   onToggleElementLock,
-  onDeleteElement,
+  onMoveElementUp,
+  onMoveElementDown,
+  onBringElementToFront,
+  onSendElementToBack,
+  onDeleteElementById,
   onResetDesign,
 }: EditorSidebarProps) {
   const selectedText =
-    selectedElement?.type === "text"
-      ? selectedElement
-      : null;
+    selectedElement?.type === "text" ? selectedElement : null;
 
   return (
     <aside className={styles.sidebar}>
@@ -71,7 +90,6 @@ export default function EditorSidebar({
             accept="image/png,image/jpeg,image/webp"
             onChange={onImageUpload}
           />
-
           <span>＋</span>
           Subir imágenes
         </label>
@@ -90,38 +108,30 @@ export default function EditorSidebar({
         </button>
 
         {selectedText && (
-          <>
+          <div className={styles.selectedTextControls}>
             <input
               type="text"
               value={selectedText.text}
-              onChange={(event) =>
-                onTextChange(event.target.value)
-              }
+              onChange={(event) => onTextChange(event.target.value)}
               className={styles.textInput}
               maxLength={80}
             />
 
             <div className={styles.colorField}>
-              <label htmlFor="text-color">
-                Color del texto
-              </label>
+              <label htmlFor="text-color">Color del texto</label>
 
               <div>
                 <input
                   id="text-color"
                   type="color"
                   value={selectedText.color}
-                  onChange={(event) =>
-                    onTextColorChange(event.target.value)
-                  }
+                  onChange={(event) => onTextColorChange(event.target.value)}
                 />
 
-                <span>
-                  {selectedText.color.toUpperCase()}
-                </span>
+                <span>{selectedText.color.toUpperCase()}</span>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 
@@ -136,14 +146,10 @@ export default function EditorSidebar({
               title={color.name}
               aria-label={color.name}
               className={
-                productColor === color.value
-                  ? styles.selectedColor
-                  : undefined
+                productColor === color.value ? styles.selectedColor : undefined
               }
               style={{ backgroundColor: color.value }}
-              onClick={() =>
-                onProductColorChange(color.value)
-              }
+              onClick={() => onProductColorChange(color.value)}
             />
           ))}
         </div>
@@ -158,10 +164,26 @@ export default function EditorSidebar({
           onIncrease={onIncreaseElement}
           onRotate={onRotateElement}
           onDuplicate={onDuplicateElement}
-          onToggleLock={onToggleElementLock}
-          onDelete={onDeleteElement}
+          onToggleLock={onToggleSelectedElementLock}
+          onDelete={onDeleteSelectedElement}
         />
       </div>
+
+      <div className={styles.controlGroup}>
+        <LayersPanel
+          elements={elements}
+          selectedElementId={selectedElementId}
+          onSelectElement={onSelectElement}
+          onToggleVisibility={onToggleElementVisibility}
+          onToggleLock={onToggleElementLock}
+          onMoveUp={onMoveElementUp}
+          onMoveDown={onMoveElementDown}
+          onBringToFront={onBringElementToFront}
+          onSendToBack={onSendElementToBack}
+          onDeleteElement={onDeleteElementById}
+        />
+      </div>
+      <ShortcutsHelp />
 
       <button
         type="button"

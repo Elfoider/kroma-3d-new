@@ -8,7 +8,7 @@ import { useState } from "react";
 
 import EditorSidebar from "@/components/editor/EditorSidebar";
 import EditorWorkspace from "@/components/editor/EditorWorkspace";
-
+import { useEditorShortcuts } from "@/features/editor/hooks/useEditorShortcuts";
 import { PRODUCTS } from "@/constants/products";
 import { usePersonalizerEditor } from "@/features/editor/hooks/usePersonalizerEditor";
 
@@ -30,8 +30,25 @@ export default function PersonalizerEditor({
     product,
   });
 
-  const [isGeneratingPreview, setIsGeneratingPreview] =
-    useState(false);
+useEditorShortcuts({
+  hasSelectedElement: Boolean(
+    editor.selectedElement,
+  ),
+
+  onUndo: editor.undo,
+  onRedo: editor.redo,
+
+  onDelete: editor.deleteSelectedElement,
+
+  onDuplicate:
+    editor.duplicateSelectedElement,
+
+  onDeselect: editor.deselectElement,
+
+  onMove: editor.moveSelectedElement,
+});
+
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
 
   async function continueToOrder() {
     const workspaceElement = editor.workspaceRef.current;
@@ -75,12 +92,8 @@ export default function PersonalizerEditor({
         createdAt: new Date().toISOString(),
 
         // Compatibilidad temporal con el formulario actual.
-        customText:
-          firstText?.type === "text" ? firstText.text : "",
-        textColor:
-          firstText?.type === "text"
-            ? firstText.color
-            : "#000000",
+        customText: firstText?.type === "text" ? firstText.text : "",
+        textColor: firstText?.type === "text" ? firstText.color : "#000000",
       };
 
       sessionStorage.setItem(
@@ -92,9 +105,7 @@ export default function PersonalizerEditor({
     } catch (error) {
       console.error(error);
 
-      alert(
-        "No se pudo generar la imagen del diseño.",
-      );
+      alert("No se pudo generar la imagen del diseño.");
     } finally {
       setIsGeneratingPreview(false);
     }
@@ -127,28 +138,28 @@ export default function PersonalizerEditor({
         <EditorSidebar
           product={product}
           productColor={editor.productColor}
+          elements={editor.elements}
           selectedElement={editor.selectedElement}
+          selectedElementId={editor.selectedElementId}
           onImageUpload={editor.handleImageUpload}
           onAddText={editor.addTextElement}
           onTextChange={editor.updateSelectedText}
-          onTextColorChange={
-            editor.updateSelectedTextColor
-          }
+          onTextColorChange={editor.updateSelectedTextColor}
           onProductColorChange={editor.setProductColor}
-          onDecreaseElement={
-            editor.decreaseSelectedElement
-          }
-          onIncreaseElement={
-            editor.increaseSelectedElement
-          }
+          onDecreaseElement={editor.decreaseSelectedElement}
+          onIncreaseElement={editor.increaseSelectedElement}
           onRotateElement={editor.rotateSelectedElement}
-          onDuplicateElement={
-            editor.duplicateSelectedElement
-          }
-          onToggleElementLock={
-            editor.toggleSelectedElementLock
-          }
-          onDeleteElement={editor.deleteSelectedElement}
+          onDuplicateElement={editor.duplicateSelectedElement}
+          onToggleSelectedElementLock={editor.toggleSelectedElementLock}
+          onDeleteSelectedElement={editor.deleteSelectedElement}
+          onSelectElement={editor.selectElement}
+          onToggleElementVisibility={editor.toggleElementVisibility}
+          onToggleElementLock={editor.toggleElementLock}
+          onMoveElementUp={editor.moveElementUp}
+          onMoveElementDown={editor.moveElementDown}
+          onBringElementToFront={editor.bringElementToFront}
+          onSendElementToBack={editor.sendElementToBack}
+          onDeleteElementById={editor.deleteElementById}
           onResetDesign={editor.resetDesign}
         />
 
@@ -159,13 +170,15 @@ export default function PersonalizerEditor({
           elements={editor.elements}
           selectedElementId={editor.selectedElementId}
           isGeneratingPreview={isGeneratingPreview}
-          onWorkspacePointerMove={
-            editor.handlePointerMove
-          }
+          onWorkspacePointerMove={editor.handlePointerMove}
           onStopDragging={editor.stopDragging}
           onDeselectElement={editor.deselectElement}
           onElementPointerDown={editor.startDragging}
           onContinueOrder={continueToOrder}
+          canUndo={editor.canUndo}
+          canRedo={editor.canRedo}
+          onUndo={editor.undo}
+          onRedo={editor.redo}
         />
       </section>
     </main>

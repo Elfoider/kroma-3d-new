@@ -1,12 +1,10 @@
-import type {
-  PointerEvent as ReactPointerEvent,
-  RefObject,
-} from "react";
+import type { PointerEvent as ReactPointerEvent, RefObject } from "react";
 
 import type { EditorElement } from "@/types/editor";
 import type { ProductType } from "@/types/product";
 
 import ProductPreview from "./ProductPreview";
+import HistoryToolbar from "./HistoryToolbar";
 
 import styles from "../../app/personalizar/[producto]/personalizer.module.css";
 
@@ -18,10 +16,12 @@ type EditorWorkspaceProps = {
   elements: EditorElement[];
   selectedElementId: string | null;
   isGeneratingPreview: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 
-  onWorkspacePointerMove: (
-    event: ReactPointerEvent<HTMLDivElement>,
-  ) => void;
+  onWorkspacePointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
 
   onStopDragging: () => void;
   onDeselectElement: () => void;
@@ -46,6 +46,10 @@ export default function EditorWorkspace({
   onDeselectElement,
   onElementPointerDown,
   onContinueOrder,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: EditorWorkspaceProps) {
   return (
     <section className={styles.workspaceSection}>
@@ -56,6 +60,13 @@ export default function EditorWorkspace({
         </div>
 
         <p>{elements.length} elementos en el diseño</p>
+
+        <HistoryToolbar
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={onUndo}
+          onRedo={onRedo}
+        />
       </div>
 
       <div

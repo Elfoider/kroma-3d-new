@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 
+import { useEditorHistory } from "./useEditorHistory";
+
 import type {
   DragState,
   EditorElement,
@@ -20,6 +22,11 @@ import type { ProductDefinition } from "@/types/product";
 
 type UsePersonalizerEditorOptions = {
   product: ProductDefinition;
+};
+
+type EditorDocument = {
+  productColor: string;
+  elements: EditorElement[];
 };
 
 const INITIAL_IMAGE_POSITION: Position = {
@@ -37,35 +44,65 @@ export function usePersonalizerEditor({
 }: UsePersonalizerEditorOptions) {
   const workspaceRef = useRef<HTMLDivElement>(null);
 
-  const defaultProductColor =
-    product.colors[0]?.value ?? "#ffffff";
+  const defaultProductColor = product.colors[0]?.value ?? "#ffffff";
 
-  const [productColor, setProductColor] = useState(
-    defaultProductColor,
+  const initialText = useMemo(() => createTextElement("Tu diseño", 1), []);
+
+  const history = useEditorHistory<EditorDocument>({
+    initialState: {
+      productColor: defaultProductColor,
+      elements: [initialText],
+    },
+  });
+
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(
+    initialText.id,
   );
 
-  const [elements, setElements] = useState<EditorElement[]>([
-    createTextElement("Tu diseño", 1),
-  ]);
+  const [dragState, setDragState] = useState<DragState | null>(null);
 
-  const [selectedElementId, setSelectedElementId] = useState<
-    string | null
-  >(elements[0]?.id ?? null);
-
-  const [dragState, setDragState] =
-    useState<DragState | null>(null);
+  const elements = history.state.elements;
+  const productColor = history.state.productColor;
 
   const selectedElement = useMemo(
-    () =>
-      elements.find(
-        (element) => element.id === selectedElementId,
-      ) ?? null,
+    () => elements.find((element) => element.id === selectedElementId) ?? null,
     [elements, selectedElementId],
   );
 
-  function handleImageUpload(
-    event: ChangeEvent<HTMLInputElement>,
+  function setElements(
+    updater: EditorElement[] | ((current: EditorElement[]) => EditorElement[]),
   ) {
+    history.set((currentDocument) => ({
+      ...currentDocument,
+
+      elements:
+        typeof updater === "function"
+          ? updater(currentDocument.elements)
+          : updater,
+    }));
+  }
+
+  function setElementsTransient(
+    updater: EditorElement[] | ((current: EditorElement[]) => EditorElement[]),
+  ) {
+    history.setTransient((currentDocument) => ({
+      ...currentDocument,
+
+      elements:
+        typeof updater === "function"
+          ? updater(currentDocument.elements)
+          : updater,
+    }));
+  }
+
+  function setProductColor(value: string) {
+    history.set((currentDocument) => ({
+      ...currentDocument,
+      productColor: value,
+    }));
+  }
+
+  function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
 
     if (files.length === 0) {
@@ -84,17 +121,15 @@ export function usePersonalizerEditor({
           return;
         }
 
-        setElements((current) => {
-          const imageElement = createImageElement(
-            reader.result,
-            file.name,
-            getNextZIndex(current),
-          );
+        const imageElement = createImageElement(
+          reader.result,
+          file.name,
+          getNextZIndex(elements),
+        );
 
-          setSelectedElementId(imageElement.id);
+        setElements((current) => [...current, imageElement]);
 
-          return [...current, imageElement];
-        });
+        setSelectedElementId(imageElement.id);
       };
 
       reader.onerror = () => {
@@ -108,36 +143,46 @@ export function usePersonalizerEditor({
   }
 
   function addTextElement() {
-    setElements((current) => {
-      const textElement = createTextElement(
-        "Nuevo texto",
-        getNextZIndex(current),
-      );
+    const textElement = createTextElement(
+      "Nuevo texto",
+      getNextZIndex(elements),
+    );
 
-      setSelectedElementId(textElement.id);
+    setElements((current) => [...current, textElement]);
 
-      return [...current, textElement];
-    });
+    setSelectedElementId(textElement.id);
   }
 
-  function updateSelectedElement(
-    updates: Partial<EditorElement>,
-  ) {
+  function updateSelectedElement(updates: Partial<EditorElement>) {
     if (!selectedElementId) {
       return;
     }
 
     setElements((current) =>
-      current.map((element) => {
-        if (element.id !== selectedElementId) {
-          return element;
-        }
+      current.map((element) =>
+        element.id === selectedElementId
+          ? ({
+              ...element,
+              ...updates,
+            } as EditorElement)
+          : element,
+      ),
+    );
+  }
 
-        return {
-          ...element,
-          ...updates,
-        } as EditorElement;
-      }),
+  function updateElementById(
+    elementId: string,
+    updates: Partial<EditorElement>,
+  ) {
+    setElements((current) =>
+      current.map((element) =>
+        element.id === elementId
+          ? ({
+              ...element,
+              ...updates,
+            } as EditorElement)
+          : element,
+      ),
     );
   }
 
@@ -173,11 +218,9 @@ export function usePersonalizerEditor({
     event: ReactPointerEvent<HTMLDivElement>,
     elementId: string,
   ) {
-    const element = elements.find(
-      (item) => item.id === elementId,
-    );
+    const element = elements.find((item) => item.id === elementId);
 
-    if (!element || element.locked) {
+    if (!element || element.locked || !element.visible) {
       return;
     }
 
@@ -185,7 +228,14 @@ export function usePersonalizerEditor({
     event.stopPropagation();
 
     setSelectedElementId(elementId);
+
     event.currentTarget.setPointerCapture(event.pointerId);
+
+    /*
+     * Desde este momento todas las actualizaciones
+     * del movimiento serán temporales.
+     */
+    history.beginTransaction();
 
     setDragState({
       elementId,
@@ -196,32 +246,30 @@ export function usePersonalizerEditor({
     });
   }
 
-  function handlePointerMove(
-    event: ReactPointerEvent<HTMLDivElement>,
-  ) {
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
     if (!dragState || !workspaceRef.current) {
       return;
     }
 
-    const workspace =
-      workspaceRef.current.getBoundingClientRect();
+    const workspace = workspaceRef.current.getBoundingClientRect();
 
     const movementX =
-      ((event.clientX - dragState.startPointerX) /
-        workspace.width) *
-      100;
+      ((event.clientX - dragState.startPointerX) / workspace.width) * 100;
 
     const movementY =
-      ((event.clientY - dragState.startPointerY) /
-        workspace.height) *
-      100;
+      ((event.clientY - dragState.startPointerY) / workspace.height) * 100;
 
     const nextPosition = {
       x: clamp(dragState.startElementX + movementX, 3, 97),
+
       y: clamp(dragState.startElementY + movementY, 3, 97),
     };
 
-    setElements((current) =>
+    /*
+     * No creamos un paso nuevo en el historial
+     * durante cada movimiento del mouse.
+     */
+    setElementsTransient((current) =>
       current.map((element) =>
         element.id === dragState.elementId
           ? {
@@ -234,11 +282,29 @@ export function usePersonalizerEditor({
   }
 
   function stopDragging() {
+    if (!dragState) {
+      return;
+    }
+
+    /*
+     * Todo el arrastre se guarda como una
+     * sola acción.
+     */
+    history.commitTransaction();
+    setDragState(null);
+  }
+
+  function cancelDragging() {
+    if (!dragState) {
+      return;
+    }
+
+    history.cancelTransaction();
     setDragState(null);
   }
 
   function increaseSelectedElement() {
-    if (!selectedElement) {
+    if (!selectedElement || selectedElement.locked) {
       return;
     }
 
@@ -248,7 +314,7 @@ export function usePersonalizerEditor({
   }
 
   function decreaseSelectedElement() {
-    if (!selectedElement) {
+    if (!selectedElement || selectedElement.locked) {
       return;
     }
 
@@ -258,14 +324,12 @@ export function usePersonalizerEditor({
   }
 
   function rotateSelectedElement() {
-    if (!selectedElement) {
+    if (!selectedElement || selectedElement.locked) {
       return;
     }
 
     updateSelectedElement({
-      rotation: normalizeRotation(
-        selectedElement.rotation + 15,
-      ),
+      rotation: normalizeRotation(selectedElement.rotation + 15),
     });
   }
 
@@ -274,13 +338,17 @@ export function usePersonalizerEditor({
       return;
     }
 
+    deleteElementById(selectedElementId);
+  }
+
+  function deleteElementById(elementId: string) {
     setElements((current) =>
-      current.filter(
-        (element) => element.id !== selectedElementId,
-      ),
+      normalizeZIndexes(current.filter((element) => element.id !== elementId)),
     );
 
-    setSelectedElementId(null);
+    if (selectedElementId === elementId) {
+      setSelectedElementId(null);
+    }
   }
 
   function duplicateSelectedElement() {
@@ -288,21 +356,23 @@ export function usePersonalizerEditor({
       return;
     }
 
-    setElements((current) => {
-      const duplicate: EditorElement = {
-        ...selectedElement,
-        id: crypto.randomUUID(),
-        position: {
-          x: clamp(selectedElement.position.x + 5, 3, 97),
-          y: clamp(selectedElement.position.y + 5, 3, 97),
-        },
-        zIndex: getNextZIndex(current),
-      };
+    const duplicate: EditorElement = {
+      ...selectedElement,
 
-      setSelectedElementId(duplicate.id);
+      id: crypto.randomUUID(),
 
-      return [...current, duplicate];
-    });
+      position: {
+        x: clamp(selectedElement.position.x + 5, 3, 97),
+
+        y: clamp(selectedElement.position.y + 5, 3, 97),
+      },
+
+      zIndex: getNextZIndex(elements),
+    };
+
+    setElements((current) => [...current, duplicate]);
+
+    setSelectedElementId(duplicate.id);
   }
 
   function toggleSelectedElementLock() {
@@ -310,17 +380,166 @@ export function usePersonalizerEditor({
       return;
     }
 
-    updateSelectedElement({
-      locked: !selectedElement.locked,
+    toggleElementLock(selectedElement.id);
+  }
+
+  function toggleElementLock(elementId: string) {
+    const element = elements.find((item) => item.id === elementId);
+
+    if (!element) {
+      return;
+    }
+
+    updateElementById(elementId, {
+      locked: !element.locked,
     });
   }
 
-  function resetDesign() {
-    const initialText = createTextElement("Tu diseño", 1);
+  function toggleElementVisibility(elementId: string) {
+    const element = elements.find((item) => item.id === elementId);
 
-    setElements([initialText]);
-    setSelectedElementId(initialText.id);
-    setProductColor(defaultProductColor);
+    if (!element) {
+      return;
+    }
+
+    updateElementById(elementId, {
+      visible: !element.visible,
+    });
+
+    if (selectedElementId === elementId && element.visible) {
+      setSelectedElementId(null);
+    }
+  }
+
+  function moveElementUp(elementId: string) {
+    setElements((current) => {
+      const ordered = [...current].sort(
+        (first, second) => first.zIndex - second.zIndex,
+      );
+
+      const index = ordered.findIndex((element) => element.id === elementId);
+
+      if (index < 0 || index === ordered.length - 1) {
+        return current;
+      }
+
+      [ordered[index], ordered[index + 1]] = [
+        ordered[index + 1],
+        ordered[index],
+      ];
+
+      return normalizeZIndexes(ordered);
+    });
+  }
+
+  function moveElementDown(elementId: string) {
+    setElements((current) => {
+      const ordered = [...current].sort(
+        (first, second) => first.zIndex - second.zIndex,
+      );
+
+      const index = ordered.findIndex((element) => element.id === elementId);
+
+      if (index <= 0) {
+        return current;
+      }
+
+      [ordered[index], ordered[index - 1]] = [
+        ordered[index - 1],
+        ordered[index],
+      ];
+
+      return normalizeZIndexes(ordered);
+    });
+  }
+
+  function bringElementToFront(elementId: string) {
+    setElements((current) => {
+      const selected = current.find((element) => element.id === elementId);
+
+      if (!selected) {
+        return current;
+      }
+
+      const others = current.filter((element) => element.id !== elementId);
+
+      return normalizeZIndexes([...others, selected]);
+    });
+  }
+
+  function sendElementToBack(elementId: string) {
+    setElements((current) => {
+      const selected = current.find((element) => element.id === elementId);
+
+      if (!selected) {
+        return current;
+      }
+
+      const others = current.filter((element) => element.id !== elementId);
+
+      return normalizeZIndexes([selected, ...others]);
+    });
+  }
+
+  function moveSelectedElement(
+    direction: "up" | "down" | "left" | "right",
+    amount = 1,
+  ) {
+    if (!selectedElement || selectedElement.locked) {
+      return;
+    }
+
+    const movement = {
+      x: 0,
+      y: 0,
+    };
+
+    if (direction === "up") {
+      movement.y = -amount;
+    }
+
+    if (direction === "down") {
+      movement.y = amount;
+    }
+
+    if (direction === "left") {
+      movement.x = -amount;
+    }
+
+    if (direction === "right") {
+      movement.x = amount;
+    }
+
+    updateSelectedElement({
+      position: {
+        x: clamp(selectedElement.position.x + movement.x, 3, 97),
+
+        y: clamp(selectedElement.position.y + movement.y, 3, 97),
+      },
+    });
+  }
+
+  function undo() {
+    history.undo();
+    setSelectedElementId(null);
+    setDragState(null);
+  }
+
+  function redo() {
+    history.redo();
+    setSelectedElementId(null);
+    setDragState(null);
+  }
+
+  function resetDesign() {
+    const newText = createTextElement("Tu diseño", 1);
+
+    history.reset({
+      productColor: defaultProductColor,
+      elements: [newText],
+    });
+
+    setSelectedElementId(newText.id);
     setDragState(null);
   }
 
@@ -345,14 +564,31 @@ export function usePersonalizerEditor({
 
     handlePointerMove,
     stopDragging,
+    cancelDragging,
     startDragging,
 
     increaseSelectedElement,
     decreaseSelectedElement,
     rotateSelectedElement,
+    moveSelectedElement,
     deleteSelectedElement,
+    deleteElementById,
     duplicateSelectedElement,
+
     toggleSelectedElementLock,
+    toggleElementLock,
+    toggleElementVisibility,
+
+    moveElementUp,
+    moveElementDown,
+    bringElementToFront,
+    sendElementToBack,
+
+    undo,
+    redo,
+
+    canUndo: history.canUndo,
+    canRedo: history.canRedo,
 
     resetDesign,
   };
@@ -368,7 +604,11 @@ function createImageElement(
     type: "image",
     src,
     name,
-    position: INITIAL_IMAGE_POSITION,
+
+    position: {
+      ...INITIAL_IMAGE_POSITION,
+    },
+
     scale: 1,
     rotation: 0,
     opacity: 1,
@@ -378,10 +618,7 @@ function createImageElement(
   };
 }
 
-function createTextElement(
-  text: string,
-  zIndex: number,
-): TextEditorElement {
+function createTextElement(text: string, zIndex: number): TextEditorElement {
   return {
     id: crypto.randomUUID(),
     type: "text",
@@ -389,7 +626,11 @@ function createTextElement(
     color: "#7b2eff",
     fontSize: 22,
     fontFamily: "var(--font-orbitron)",
-    position: INITIAL_TEXT_POSITION,
+
+    position: {
+      ...INITIAL_TEXT_POSITION,
+    },
+
     scale: 1,
     rotation: 0,
     opacity: 1,
@@ -404,16 +645,17 @@ function getNextZIndex(elements: EditorElement[]) {
     return 1;
   }
 
-  return Math.max(
-    ...elements.map((element) => element.zIndex),
-  ) + 1;
+  return Math.max(...elements.map((element) => element.zIndex)) + 1;
 }
 
-function clamp(
-  value: number,
-  minimum: number,
-  maximum: number,
-) {
+function normalizeZIndexes(elements: EditorElement[]): EditorElement[] {
+  return elements.map((element, index) => ({
+    ...element,
+    zIndex: index + 1,
+  }));
+}
+
+function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(Math.max(value, minimum), maximum);
 }
 
