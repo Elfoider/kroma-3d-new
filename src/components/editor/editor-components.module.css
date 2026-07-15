@@ -211,3 +211,15 @@
     transform: scale(0.72);
   }
 }
+
+.lockedElement {
+  cursor: not-allowed;
+}
+
+.lockedElement::after {
+  content: "🔒";
+  position: absolute;
+  top: -19px;
+  right: -16px;
+  font-size: 11px;
+}

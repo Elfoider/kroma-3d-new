@@ -2,51 +2,24 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 
-import type {
-  Position,
-  SelectedElement,
-} from "@/types/editor";
+import type { EditorElement } from "@/types/editor";
 
 import styles from "./editor-components.module.css";
 
 type DesignAreaProps = {
-  uploadedImage: string | null;
-  customText: string;
-  textColor: string;
+  elements: EditorElement[];
+  selectedElementId: string | null;
 
-  imagePosition: Position;
-  textPosition: Position;
-
-  imageScale: number;
-  textScale: number;
-
-  imageRotation: number;
-  textRotation: number;
-
-  selectedElement: SelectedElement;
-
-  onImagePointerDown: (
+  onElementPointerDown: (
     event: ReactPointerEvent<HTMLDivElement>,
-  ) => void;
-
-  onTextPointerDown: (
-    event: ReactPointerEvent<HTMLDivElement>,
+    elementId: string,
   ) => void;
 };
 
 export default function DesignArea({
-  uploadedImage,
-  customText,
-  textColor,
-  imagePosition,
-  textPosition,
-  imageScale,
-  textScale,
-  imageRotation,
-  textRotation,
-  selectedElement,
-  onImagePointerDown,
-  onTextPointerDown,
+  elements,
+  selectedElementId,
+  onElementPointerDown,
 }: DesignAreaProps) {
   return (
     <div className={styles.designArea}>
@@ -54,55 +27,70 @@ export default function DesignArea({
         <span>Área de impresión</span>
       </div>
 
-      {uploadedImage && (
-        <div
-          className={`${styles.designElement} ${
-            selectedElement === "image"
-              ? styles.selectedElement
-              : ""
-          }`}
-          style={{
-            left: `${imagePosition.x}%`,
-            top: `${imagePosition.y}%`,
+      {elements
+        .filter((element) => element.visible)
+        .sort((first, second) => first.zIndex - second.zIndex)
+        .map((element) => {
+          const elementStyle = {
+            left: `${element.position.x}%`,
+            top: `${element.position.y}%`,
+            zIndex: element.zIndex,
+            opacity: element.opacity,
             transform: `
               translate(-50%, -50%)
-              scale(${imageScale})
-              rotate(${imageRotation}deg)
+              scale(${element.scale})
+              rotate(${element.rotation}deg)
             `,
-          }}
-          onPointerDown={onImagePointerDown}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={uploadedImage}
-            alt="Diseño cargado por el usuario"
-            draggable={false}
-          />
-        </div>
-      )}
+          };
 
-      {customText && (
-        <div
-          className={`${styles.designText} ${
-            selectedElement === "text"
+          const className = `${
+            element.type === "image"
+              ? styles.designElement
+              : styles.designText
+          } ${
+            selectedElementId === element.id
               ? styles.selectedElement
               : ""
-          }`}
-          style={{
-            left: `${textPosition.x}%`,
-            top: `${textPosition.y}%`,
-            color: textColor,
-            transform: `
-              translate(-50%, -50%)
-              scale(${textScale})
-              rotate(${textRotation}deg)
-            `,
-          }}
-          onPointerDown={onTextPointerDown}
-        >
-          {customText}
-        </div>
-      )}
+          } ${element.locked ? styles.lockedElement : ""}`;
+
+          if (element.type === "image") {
+            return (
+              <div
+                key={element.id}
+                className={className}
+                style={elementStyle}
+                onPointerDown={(event) =>
+                  onElementPointerDown(event, element.id)
+                }
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={element.src}
+                  alt={element.name}
+                  draggable={false}
+                />
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={element.id}
+              className={className}
+              style={{
+                ...elementStyle,
+                color: element.color,
+                fontSize: `${element.fontSize}px`,
+                fontFamily: element.fontFamily,
+              }}
+              onPointerDown={(event) =>
+                onElementPointerDown(event, element.id)
+              }
+            >
+              {element.text}
+            </div>
+          );
+        })}
     </div>
   );
 }

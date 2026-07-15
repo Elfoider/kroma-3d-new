@@ -484,3 +484,10 @@
     justify-content: center;
   }
 }
+
+.elementControls {
+  margin-top: 11px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
