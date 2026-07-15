@@ -481,11 +481,23 @@ export function usePersonalizerEditor({
     });
   }
 
-  function moveSelectedElement(
+  function startKeyboardMovement() {
+    if (!selectedElement || selectedElement.locked) {
+      return;
+    }
+
+    history.beginTransaction();
+  }
+
+  function moveSelectedElementTransient(
     direction: "up" | "down" | "left" | "right",
     amount = 1,
   ) {
-    if (!selectedElement || selectedElement.locked) {
+    const currentSelectedElement = history.state.elements.find(
+      (element) => element.id === selectedElementId,
+    );
+
+    if (!currentSelectedElement || currentSelectedElement.locked) {
       return;
     }
 
@@ -510,13 +522,21 @@ export function usePersonalizerEditor({
       movement.x = amount;
     }
 
-    updateSelectedElement({
+    updateSelectedElementTransient({
       position: {
-        x: clamp(selectedElement.position.x + movement.x, 3, 97),
+        x: clamp(currentSelectedElement.position.x + movement.x, 3, 97),
 
-        y: clamp(selectedElement.position.y + movement.y, 3, 97),
+        y: clamp(currentSelectedElement.position.y + movement.y, 3, 97),
       },
     });
+  }
+
+  function commitKeyboardMovement() {
+    history.commitTransaction();
+  }
+
+  function cancelKeyboardMovement() {
+    history.cancelTransaction();
   }
 
   function undo() {
@@ -570,7 +590,12 @@ export function usePersonalizerEditor({
     increaseSelectedElement,
     decreaseSelectedElement,
     rotateSelectedElement,
-    moveSelectedElement,
+
+    startKeyboardMovement,
+    moveSelectedElementTransient,
+    commitKeyboardMovement,
+    cancelKeyboardMovement,
+
     deleteSelectedElement,
     deleteElementById,
     duplicateSelectedElement,
@@ -661,4 +686,21 @@ function clamp(value: number, minimum: number, maximum: number) {
 
 function normalizeRotation(rotation: number) {
   return ((rotation % 360) + 360) % 360;
+}
+
+function updateSelectedElementTransient(updates: Partial<EditorElement>) {
+  if (!selectedElementId) {
+    return;
+  }
+
+  setElementsTransient((current) =>
+    current.map((element) =>
+      element.id === selectedElementId
+        ? ({
+            ...element,
+            ...updates,
+          } as EditorElement)
+        : element,
+    ),
+  );
 }

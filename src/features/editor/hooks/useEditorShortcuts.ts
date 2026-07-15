@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type MovementDirection =
   | "up"
@@ -17,10 +17,15 @@ type UseEditorShortcutsOptions = {
   onDuplicate: () => void;
   onDeselect: () => void;
 
-  onMove: (
+  onStartKeyboardMovement: () => void;
+
+  onMoveTransient: (
     direction: MovementDirection,
     amount: number,
   ) => void;
+
+  onCommitKeyboardMovement: () => void;
+  onCancelKeyboardMovement: () => void;
 };
 
 export function useEditorShortcuts({
@@ -30,8 +35,13 @@ export function useEditorShortcuts({
   onDelete,
   onDuplicate,
   onDeselect,
-  onMove,
+  onStartKeyboardMovement,
+  onMoveTransient,
+  onCommitKeyboardMovement,
+  onCancelKeyboardMovement,
 }: UseEditorShortcutsOptions) {
+  const isMovingWithKeyboardRef = useRef(false);
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (isTypingElement(document.activeElement)) {
@@ -64,6 +74,12 @@ export function useEditorShortcuts({
 
       if (event.key === "Escape") {
         event.preventDefault();
+
+        if (isMovingWithKeyboardRef.current) {
+          onCancelKeyboardMovement();
+          isMovingWithKeyboardRef.current = false;
+        }
+
         onDeselect();
         return;
       }
@@ -87,49 +103,90 @@ export function useEditorShortcuts({
         return;
       }
 
+      const direction = getMovementDirection(event.key);
+
+      if (!direction) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (!isMovingWithKeyboardRef.current) {
+        onStartKeyboardMovement();
+        isMovingWithKeyboardRef.current = true;
+      }
+
       const movementAmount = event.shiftKey ? 5 : 1;
 
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        onMove("up", movementAmount);
+      onMoveTransient(direction, movementAmount);
+    }
+
+    function handleKeyUp(event: KeyboardEvent) {
+      const direction = getMovementDirection(event.key);
+
+      if (
+        !direction ||
+        !isMovingWithKeyboardRef.current
+      ) {
         return;
       }
 
-      if (event.key === "ArrowDown") {
-        event.preventDefault();
-        onMove("down", movementAmount);
+      onCommitKeyboardMovement();
+      isMovingWithKeyboardRef.current = false;
+    }
+
+    function handleWindowBlur() {
+      if (!isMovingWithKeyboardRef.current) {
         return;
       }
 
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        onMove("left", movementAmount);
-        return;
-      }
-
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        onMove("right", movementAmount);
-      }
+      onCommitKeyboardMovement();
+      isMovingWithKeyboardRef.current = false;
     }
 
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", handleWindowBlur);
 
     return () => {
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", handleWindowBlur);
     };
   }, [
     hasSelectedElement,
+    onCancelKeyboardMovement,
+    onCommitKeyboardMovement,
     onDelete,
     onDeselect,
     onDuplicate,
-    onMove,
+    onMoveTransient,
     onRedo,
+    onStartKeyboardMovement,
     onUndo,
   ]);
+}
+
+function getMovementDirection(
+  key: string,
+): MovementDirection | null {
+  if (key === "ArrowUp") {
+    return "up";
+  }
+
+  if (key === "ArrowDown") {
+    return "down";
+  }
+
+  if (key === "ArrowLeft") {
+    return "left";
+  }
+
+  if (key === "ArrowRight") {
+    return "right";
+  }
+
+  return null;
 }
 
 function isTypingElement(
@@ -139,7 +196,7 @@ function isTypingElement(
     element instanceof HTMLInputElement ||
     element instanceof HTMLTextAreaElement ||
     element instanceof HTMLSelectElement ||
-    element instanceof HTMLElement &&
-      element.isContentEditable
+    (element instanceof HTMLElement &&
+      element.isContentEditable)
   );
 }

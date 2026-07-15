@@ -39,13 +39,20 @@ useEditorShortcuts({
   onRedo: editor.redo,
 
   onDelete: editor.deleteSelectedElement,
-
-  onDuplicate:
-    editor.duplicateSelectedElement,
-
+  onDuplicate: editor.duplicateSelectedElement,
   onDeselect: editor.deselectElement,
 
-  onMove: editor.moveSelectedElement,
+  onStartKeyboardMovement:
+    editor.startKeyboardMovement,
+
+  onMoveTransient:
+    editor.moveSelectedElementTransient,
+
+  onCommitKeyboardMovement:
+    editor.commitKeyboardMovement,
+
+  onCancelKeyboardMovement:
+    editor.cancelKeyboardMovement,
 });
 
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
