@@ -5,6 +5,23 @@ export type Position = {
   y: number;
 };
 
+export type PanPosition = {
+  x: number;
+  y: number;
+};
+
+export type PanInteraction = {
+  startPointerX: number;
+  startPointerY: number;
+  startPanX: number;
+  startPanY: number;
+};
+
+export type ActiveGuides = {
+  vertical: boolean;
+  horizontal: boolean;
+};
+
 export type EditorElementType = "image" | "text";
 
 export type BaseEditorElement = {

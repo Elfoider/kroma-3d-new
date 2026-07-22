@@ -30,30 +30,30 @@ export default function PersonalizerEditor({
     product,
   });
 
-useEditorShortcuts({
-  hasSelectedElement: Boolean(
-    editor.selectedElement,
-  ),
+  useEditorShortcuts({
+    hasSelectedElement: Boolean(editor.selectedElement),
 
-  onUndo: editor.undo,
-  onRedo: editor.redo,
+    onUndo: editor.undo,
+    onRedo: editor.redo,
 
-  onDelete: editor.deleteSelectedElement,
-  onDuplicate: editor.duplicateSelectedElement,
-  onDeselect: editor.deselectElement,
+    onDelete: editor.deleteSelectedElement,
+    onDuplicate: editor.duplicateSelectedElement,
+    onDeselect: editor.deselectElement,
 
-  onStartKeyboardMovement:
-    editor.startKeyboardMovement,
+    onStartKeyboardMovement: editor.startKeyboardMovement,
 
-  onMoveTransient:
-    editor.moveSelectedElementTransient,
+    onMoveTransient: editor.moveSelectedElementTransient,
 
-  onCommitKeyboardMovement:
-    editor.commitKeyboardMovement,
+    onCommitKeyboardMovement: editor.commitKeyboardMovement,
 
-  onCancelKeyboardMovement:
-    editor.cancelKeyboardMovement,
-});
+    onCancelKeyboardMovement: editor.cancelKeyboardMovement,
+
+    onActivatePanMode:
+  editor.activatePanMode,
+
+onDeactivatePanMode:
+  editor.deactivatePanMode,
+  });
 
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
 
@@ -65,12 +65,15 @@ useEditorShortcuts({
       return;
     }
 
+    const previousZoom = editor.zoom;
     try {
       setIsGeneratingPreview(true);
-      editor.deselectElement();
+
+      editor.fitView();
+      editor.deselectElement(); 
 
       await new Promise<void>((resolve) => {
-        window.setTimeout(resolve, 200);
+        window.setTimeout(resolve, 250);
       });
 
       const previewImage = await toPng(workspaceElement, {
@@ -114,6 +117,7 @@ useEditorShortcuts({
 
       alert("No se pudo generar la imagen del diseño.");
     } finally {
+      editor.setZoom(previousZoom);
       setIsGeneratingPreview(false);
     }
   }
@@ -168,6 +172,13 @@ useEditorShortcuts({
           onSendElementToBack={editor.sendElementToBack}
           onDeleteElementById={editor.deleteElementById}
           onResetDesign={editor.resetDesign}
+          onAlignLeft={editor.alignSelectedElementLeft}
+          onAlignHorizontalCenter={editor.alignSelectedElementHorizontalCenter}
+          onAlignRight={editor.alignSelectedElementRight}
+          onAlignTop={editor.alignSelectedElementTop}
+          onAlignVerticalCenter={editor.alignSelectedElementVerticalCenter}
+          onAlignBottom={editor.alignSelectedElementBottom}
+          onAlignExactCenter={editor.alignSelectedElementExactCenter}
         />
 
         <EditorWorkspace
@@ -176,16 +187,30 @@ useEditorShortcuts({
           productColor={editor.productColor}
           elements={editor.elements}
           selectedElementId={editor.selectedElementId}
+          activeGuides={editor.activeGuides}
+          zoom={editor.zoom}
+          canZoomIn={editor.canZoomIn}
+          canZoomOut={editor.canZoomOut}
           isGeneratingPreview={isGeneratingPreview}
-          onWorkspacePointerMove={editor.handlePointerMove}
-          onStopDragging={editor.stopDragging}
-          onDeselectElement={editor.deselectElement}
-          onElementPointerDown={editor.startDragging}
-          onContinueOrder={continueToOrder}
           canUndo={editor.canUndo}
           canRedo={editor.canRedo}
           onUndo={editor.undo}
           onRedo={editor.redo}
+          onZoomIn={editor.zoomIn}
+          onZoomOut={editor.zoomOut}
+          onZoomChange={editor.setZoom}
+          onFitView={editor.fitView}
+          onWorkspacePointerMove={editor.handlePointerMove}
+          onStopDragging={editor.stopDragging}
+          onDeselectElement={editor.deselectElement}
+          onElementPointerDown={editor.startDragging}
+          onScalePointerDown={editor.startScaling}
+          onRotatePointerDown={editor.startRotating}
+          onContinueOrder={continueToOrder}
+          panPosition={editor.panPosition}
+isPanning={editor.isPanning}
+isPanModeActive={editor.isPanModeActive}
+onStartPanning={editor.startPanning}
         />
       </section>
     </main>

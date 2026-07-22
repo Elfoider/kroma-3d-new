@@ -358,15 +358,10 @@
   opacity: 0.16;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.06) 1px,
-      transparent 1px
-    );
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
   background-size: 32px 32px;
   pointer-events: none;
 }
-
 
 .continueButton:disabled {
   cursor: wait;
@@ -729,4 +724,235 @@
   color: #7f8a9f;
   font-size: 10px;
   text-align: right;
+}
+
+.smartGuides {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.verticalGuide,
+.horizontalGuide {
+  position: absolute;
+  background: #ff2e88;
+  box-shadow:
+    0 0 5px rgba(255, 46, 136, 0.8),
+    0 0 12px rgba(255, 46, 136, 0.35);
+}
+
+.verticalGuide {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.horizontalGuide {
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.guideCenterPoint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #ff2e88;
+  border-radius: 50%;
+  background: #0b1020;
+  box-shadow: 0 0 10px rgba(255, 46, 136, 0.75);
+  transform: translate(-50%, -50%);
+}
+
+.alignmentToolbar {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.alignmentHeading {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.alignmentHeading span {
+  color: #c5cee0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.alignmentHeading small {
+  color: #6f7a90;
+  font-size: 9px;
+}
+
+.alignmentGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.alignmentGrid button {
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: #182137;
+  color: #dce3ef;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.alignmentGrid button:hover:not(:disabled) {
+  border-color: #00c2ff;
+  background: rgba(0, 194, 255, 0.12);
+}
+
+.alignmentGrid button:disabled {
+  cursor: not-allowed;
+  opacity: 0.32;
+}
+
+.alignmentGrid > span {
+  display: block;
+}
+
+.centerAlignmentButton {
+  border-color: rgba(123, 46, 255, 0.45) !important;
+  background: rgba(123, 46, 255, 0.12) !important;
+  color: #d9c8ff !important;
+}
+
+.zoomToolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zoomToolbar button {
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  background: #182137;
+  color: white;
+}
+
+.zoomToolbar button {
+  min-width: 38px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.zoomToolbar button:hover:not(:disabled) {
+  border-color: #00c2ff;
+  background: rgba(0, 194, 255, 0.1);
+}
+
+.zoomToolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.zoomToolbar .fitViewButton {
+  min-width: 68px;
+  color: #c7b6ee;
+}
+
+.workspaceHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .workspaceHeaderActions {
+    align-items: flex-end;
+    flex-direction: column;
+  }
+}
+
+.zoomStatus {
+  position: relative;
+  width: 78px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  background: #182137;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.zoomStatus:hover {
+  border-color: #00c2ff;
+  background: rgba(0, 194, 255, 0.1);
+}
+
+.zoomStatus strong {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.zoomStatus select {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.zoomStatus option {
+  background: #182137;
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .zoomToolbar {
+    width: 100%;
+  }
+
+  .zoomToolbar select {
+    flex: 1;
+  }
+}
+
+.panModeActive {
+  cursor: grab;
+}
+
+.panning {
+  cursor: grabbing;
+}
+
+.panModeActive * {
+  cursor: grab !important;
+}
+
+.panning * {
+  cursor: grabbing !important;
 }

@@ -223,3 +223,104 @@
   right: -16px;
   font-size: 11px;
 }
+
+.transformControls {
+  position: absolute;
+  inset: -7px;
+  z-index: 20;
+  border: 1px solid #00c2ff;
+  pointer-events: none;
+}
+
+.scaleHandle,
+.rotationHandle {
+  position: absolute;
+  z-index: 22;
+  display: block;
+  border: 2px solid #00c2ff;
+  background: #f4f7ff;
+  cursor: nwse-resize;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.scaleHandle {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border-radius: 3px;
+}
+
+.topLeftHandle {
+  top: -7px;
+  left: -7px;
+}
+
+.topRightHandle {
+  top: -7px;
+  right: -7px;
+  cursor: nesw-resize;
+}
+
+.bottomLeftHandle {
+  bottom: -7px;
+  left: -7px;
+  cursor: nesw-resize;
+}
+
+.bottomRightHandle {
+  right: -7px;
+  bottom: -7px;
+}
+
+.rotationLine {
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  width: 1px;
+  height: 28px;
+  background: #00c2ff;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.rotationHandle {
+  bottom: calc(100% + 23px);
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #0b1020;
+  font-size: 13px;
+  line-height: 1;
+  cursor: grab;
+  transform: translateX(-50%);
+}
+
+.rotationHandle:active {
+  cursor: grabbing;
+}
+
+.workspaceHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.zoomCanvas {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+  transition: transform 0.18s ease;
+  will-change: transform;
+}
+
+.zoomCanvas:active {
+  transition: none;
+}

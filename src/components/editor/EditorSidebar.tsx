@@ -5,6 +5,7 @@ import type { ProductDefinition } from "@/types/product";
 
 import ElementToolbar from "./ElementToolbar";
 import LayersPanel from "./LayersPanel";
+import AlignmentToolbar from "./AlignmentToolbar";
 
 import styles from "../../app/personalizar/[producto]/personalizer.module.css";
 
@@ -15,6 +16,16 @@ type EditorSidebarProps = {
   elements: EditorElement[];
   selectedElement: EditorElement | null;
   selectedElementId: string | null;
+
+  onAlignLeft: () => void;
+  onAlignHorizontalCenter: () => void;
+  onAlignRight: () => void;
+
+  onAlignTop: () => void;
+  onAlignVerticalCenter: () => void;
+  onAlignBottom: () => void;
+
+  onAlignExactCenter: () => void;
 
   onImageUpload: (event: ChangeEvent<HTMLInputElement>) => void;
 
@@ -68,6 +79,13 @@ export default function EditorSidebar({
   onSendElementToBack,
   onDeleteElementById,
   onResetDesign,
+  onAlignLeft,
+  onAlignHorizontalCenter,
+  onAlignRight,
+  onAlignTop,
+  onAlignVerticalCenter,
+  onAlignBottom,
+  onAlignExactCenter,
 }: EditorSidebarProps) {
   const selectedText =
     selectedElement?.type === "text" ? selectedElement : null;
@@ -166,6 +184,17 @@ export default function EditorSidebar({
           onDuplicate={onDuplicateElement}
           onToggleLock={onToggleSelectedElementLock}
           onDelete={onDeleteSelectedElement}
+        />
+
+        <AlignmentToolbar
+          selectedElement={selectedElement}
+          onAlignLeft={onAlignLeft}
+          onAlignHorizontalCenter={onAlignHorizontalCenter}
+          onAlignRight={onAlignRight}
+          onAlignTop={onAlignTop}
+          onAlignVerticalCenter={onAlignVerticalCenter}
+          onAlignBottom={onAlignBottom}
+          onAlignExactCenter={onAlignExactCenter}
         />
       </div>
 

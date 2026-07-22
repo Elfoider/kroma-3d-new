@@ -2,11 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-type MovementDirection =
-  | "up"
-  | "down"
-  | "left"
-  | "right";
+type MovementDirection = "up" | "down" | "left" | "right";
 
 type UseEditorShortcutsOptions = {
   hasSelectedElement: boolean;
@@ -19,13 +15,13 @@ type UseEditorShortcutsOptions = {
 
   onStartKeyboardMovement: () => void;
 
-  onMoveTransient: (
-    direction: MovementDirection,
-    amount: number,
-  ) => void;
+  onMoveTransient: (direction: MovementDirection, amount: number) => void;
 
   onCommitKeyboardMovement: () => void;
   onCancelKeyboardMovement: () => void;
+
+  onActivatePanMode: () => void;
+  onDeactivatePanMode: () => void;
 };
 
 export function useEditorShortcuts({
@@ -39,6 +35,8 @@ export function useEditorShortcuts({
   onMoveTransient,
   onCommitKeyboardMovement,
   onCancelKeyboardMovement,
+  onActivatePanMode,
+  onDeactivatePanMode,
 }: UseEditorShortcutsOptions) {
   const isMovingWithKeyboardRef = useRef(false);
 
@@ -51,11 +49,13 @@ export function useEditorShortcuts({
       const key = event.key.toLowerCase();
       const hasModifier = event.ctrlKey || event.metaKey;
 
-      if (
-        hasModifier &&
-        key === "z" &&
-        !event.shiftKey
-      ) {
+      if (event.code === "Space" && !event.repeat) {
+        event.preventDefault();
+        onActivatePanMode();
+        return;
+      }
+
+      if (hasModifier && key === "z" && !event.shiftKey) {
         event.preventDefault();
         onUndo();
         return;
@@ -63,9 +63,7 @@ export function useEditorShortcuts({
 
       if (
         (hasModifier && key === "y") ||
-        (hasModifier &&
-          event.shiftKey &&
-          key === "z")
+        (hasModifier && event.shiftKey && key === "z")
       ) {
         event.preventDefault();
         onRedo();
@@ -88,10 +86,7 @@ export function useEditorShortcuts({
         return;
       }
 
-      if (
-        event.key === "Delete" ||
-        event.key === "Backspace"
-      ) {
+      if (event.key === "Delete" || event.key === "Backspace") {
         event.preventDefault();
         onDelete();
         return;
@@ -122,12 +117,15 @@ export function useEditorShortcuts({
     }
 
     function handleKeyUp(event: KeyboardEvent) {
+      if (event.code === "Space") {
+        event.preventDefault();
+        onDeactivatePanMode();
+        return;
+      }
+
       const direction = getMovementDirection(event.key);
 
-      if (
-        !direction ||
-        !isMovingWithKeyboardRef.current
-      ) {
+      if (!direction || !isMovingWithKeyboardRef.current) {
         return;
       }
 
@@ -136,6 +134,7 @@ export function useEditorShortcuts({
     }
 
     function handleWindowBlur() {
+      onDeactivatePanMode();
       if (!isMovingWithKeyboardRef.current) {
         return;
       }
@@ -164,12 +163,12 @@ export function useEditorShortcuts({
     onRedo,
     onStartKeyboardMovement,
     onUndo,
+    onActivatePanMode,
+    onDeactivatePanMode,
   ]);
 }
 
-function getMovementDirection(
-  key: string,
-): MovementDirection | null {
+function getMovementDirection(key: string): MovementDirection | null {
   if (key === "ArrowUp") {
     return "up";
   }
@@ -189,14 +188,11 @@ function getMovementDirection(
   return null;
 }
 
-function isTypingElement(
-  element: Element | null,
-) {
+function isTypingElement(element: Element | null) {
   return (
     element instanceof HTMLInputElement ||
     element instanceof HTMLTextAreaElement ||
     element instanceof HTMLSelectElement ||
-    (element instanceof HTMLElement &&
-      element.isContentEditable)
+    (element instanceof HTMLElement && element.isContentEditable)
   );
 }

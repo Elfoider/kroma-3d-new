@@ -11,11 +11,14 @@ import {
 import { useEditorHistory } from "./useEditorHistory";
 
 import type {
+  ActiveGuides,
   DragState,
   EditorElement,
   ImageEditorElement,
   Position,
   TextEditorElement,
+  PanInteraction,
+  PanPosition,
 } from "@/types/editor";
 
 import type { ProductDefinition } from "@/types/product";
@@ -29,6 +32,20 @@ type EditorDocument = {
   elements: EditorElement[];
 };
 
+type TransformInteraction = {
+  mode: "scale" | "rotate";
+  elementId: string;
+
+  centerX: number;
+  centerY: number;
+
+  initialScale: number;
+  initialRotation: number;
+
+  initialDistance: number;
+  initialAngle: number;
+};
+
 const INITIAL_IMAGE_POSITION: Position = {
   x: 50,
   y: 42,
@@ -37,6 +54,28 @@ const INITIAL_IMAGE_POSITION: Position = {
 const INITIAL_TEXT_POSITION: Position = {
   x: 50,
   y: 68,
+};
+
+const ALIGNMENT_MINIMUM = 8;
+const ALIGNMENT_MAXIMUM = 92;
+const ALIGNMENT_CENTER = 50;
+
+const CENTER_POSITION = 50;
+const SNAP_THRESHOLD = 2.5;
+
+const EMPTY_GUIDES: ActiveGuides = {
+  vertical: false,
+  horizontal: false,
+};
+
+const MINIMUM_ZOOM = 25;
+const MAXIMUM_ZOOM = 200;
+const ZOOM_STEP = 25;
+const DEFAULT_ZOOM = 100;
+
+const INITIAL_PAN_POSITION: PanPosition = {
+  x: 0,
+  y: 0,
 };
 
 export function usePersonalizerEditor({
@@ -60,6 +99,25 @@ export function usePersonalizerEditor({
   );
 
   const [dragState, setDragState] = useState<DragState | null>(null);
+
+  const [transformInteraction, setTransformInteraction] =
+    useState<TransformInteraction | null>(null);
+
+  const [activeGuides, setActiveGuides] = useState<ActiveGuides>({
+    vertical: false,
+    horizontal: false,
+  });
+
+  const [zoom, setZoomState] = useState(DEFAULT_ZOOM);
+
+  const [panPosition, setPanPosition] =
+    useState<PanPosition>(INITIAL_PAN_POSITION);
+
+  const [panInteraction, setPanInteraction] = useState<PanInteraction | null>(
+    null,
+  );
+
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
 
   const elements = history.state.elements;
   const productColor = history.state.productColor;
@@ -235,6 +293,7 @@ export function usePersonalizerEditor({
      * Desde este momento todas las actualizaciones
      * del movimiento serán temporales.
      */
+    setActiveGuides(EMPTY_GUIDES);
     history.beginTransaction();
 
     setDragState({
@@ -246,7 +305,209 @@ export function usePersonalizerEditor({
     });
   }
 
+  function startScaling(
+    event: ReactPointerEvent<HTMLButtonElement>,
+    elementId: string,
+  ) {
+    const element = elements.find((item) => item.id === elementId);
+
+    if (!element || element.locked) {
+      return;
+    }
+
+    const elementNode = event.currentTarget.closest(
+      '[data-editor-element="true"]',
+    );
+
+    if (!(elementNode instanceof HTMLElement)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    const rectangle = elementNode.getBoundingClientRect();
+
+    const centerX = rectangle.left + rectangle.width / 2;
+
+    const centerY = rectangle.top + rectangle.height / 2;
+
+    const initialDistance = getDistance(
+      event.clientX,
+      event.clientY,
+      centerX,
+      centerY,
+    );
+
+    setActiveGuides(EMPTY_GUIDES);
+    history.beginTransaction();
+
+    setSelectedElementId(elementId);
+    setDragState(null);
+
+    setTransformInteraction({
+      mode: "scale",
+      elementId,
+
+      centerX,
+      centerY,
+
+      initialScale: element.scale,
+      initialRotation: element.rotation,
+
+      initialDistance: Math.max(initialDistance, 1),
+
+      initialAngle: 0,
+    });
+  }
+
+  function startRotating(
+    event: ReactPointerEvent<HTMLButtonElement>,
+    elementId: string,
+  ) {
+    const element = elements.find((item) => item.id === elementId);
+
+    if (!element || element.locked) {
+      return;
+    }
+
+    const elementNode = event.currentTarget.closest(
+      '[data-editor-element="true"]',
+    );
+
+    if (!(elementNode instanceof HTMLElement)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    const rectangle = elementNode.getBoundingClientRect();
+
+    const centerX = rectangle.left + rectangle.width / 2;
+
+    const centerY = rectangle.top + rectangle.height / 2;
+
+    history.beginTransaction();
+
+    setSelectedElementId(elementId);
+    setDragState(null);
+
+    setTransformInteraction({
+      mode: "rotate",
+      elementId,
+
+      centerX,
+      centerY,
+
+      initialScale: element.scale,
+      initialRotation: element.rotation,
+
+      initialDistance: 0,
+
+      initialAngle: getAngle(event.clientX, event.clientY, centerX, centerY),
+    });
+  }
+
+  function startPanning(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!isSpacePressed || zoom <= 100) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    setDragState(null);
+    setTransformInteraction(null);
+    setActiveGuides(EMPTY_GUIDES);
+
+    setPanInteraction({
+      startPointerX: event.clientX,
+      startPointerY: event.clientY,
+      startPanX: panPosition.x,
+      startPanY: panPosition.y,
+    });
+  }
+
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    if (panInteraction) {
+      const movementX = event.clientX - panInteraction.startPointerX;
+
+      const movementY = event.clientY - panInteraction.startPointerY;
+
+      setPanPosition({
+        x: panInteraction.startPanX + movementX,
+        y: panInteraction.startPanY + movementY,
+      });
+
+      return;
+    }
+
+    if (transformInteraction) {
+      if (transformInteraction.mode === "scale") {
+        const currentDistance = getDistance(
+          event.clientX,
+          event.clientY,
+          transformInteraction.centerX,
+          transformInteraction.centerY,
+        );
+
+        const scaleRatio =
+          currentDistance / transformInteraction.initialDistance;
+
+        const nextScale = clamp(
+          transformInteraction.initialScale * scaleRatio,
+          0.2,
+          4,
+        );
+
+        setElementsTransient((current) =>
+          current.map((element) =>
+            element.id === transformInteraction.elementId
+              ? {
+                  ...element,
+                  scale: nextScale,
+                }
+              : element,
+          ),
+        );
+
+        return;
+      }
+
+      const currentAngle = getAngle(
+        event.clientX,
+        event.clientY,
+        transformInteraction.centerX,
+        transformInteraction.centerY,
+      );
+
+      const angleDifference = currentAngle - transformInteraction.initialAngle;
+
+      const nextRotation = normalizeRotation(
+        transformInteraction.initialRotation + angleDifference,
+      );
+
+      setElementsTransient((current) =>
+        current.map((element) =>
+          element.id === transformInteraction.elementId
+            ? {
+                ...element,
+                rotation: nextRotation,
+              }
+            : element,
+        ),
+      );
+
+      return;
+    }
+
     if (!dragState || !workspaceRef.current) {
       return;
     }
@@ -259,16 +520,29 @@ export function usePersonalizerEditor({
     const movementY =
       ((event.clientY - dragState.startPointerY) / workspace.height) * 100;
 
-    const nextPosition = {
+    const rawPosition = {
       x: clamp(dragState.startElementX + movementX, 3, 97),
 
       y: clamp(dragState.startElementY + movementY, 3, 97),
     };
 
-    /*
-     * No creamos un paso nuevo en el historial
-     * durante cada movimiento del mouse.
-     */
+    const shouldSnapVertically =
+      Math.abs(rawPosition.x - CENTER_POSITION) <= SNAP_THRESHOLD;
+
+    const shouldSnapHorizontally =
+      Math.abs(rawPosition.y - CENTER_POSITION) <= SNAP_THRESHOLD;
+
+    const nextPosition = {
+      x: shouldSnapVertically ? CENTER_POSITION : rawPosition.x,
+
+      y: shouldSnapHorizontally ? CENTER_POSITION : rawPosition.y,
+    };
+
+    setActiveGuides({
+      vertical: shouldSnapVertically,
+      horizontal: shouldSnapHorizontally,
+    });
+
     setElementsTransient((current) =>
       current.map((element) =>
         element.id === dragState.elementId
@@ -282,25 +556,39 @@ export function usePersonalizerEditor({
   }
 
   function stopDragging() {
-    if (!dragState) {
+    if (panInteraction) {
+      setPanInteraction(null);
       return;
     }
 
-    /*
-     * Todo el arrastre se guarda como una
-     * sola acción.
-     */
+    if (!dragState && !transformInteraction) {
+      setActiveGuides(EMPTY_GUIDES);
+      return;
+    }
+
     history.commitTransaction();
+
     setDragState(null);
+    setTransformInteraction(null);
+    setActiveGuides(EMPTY_GUIDES);
   }
 
   function cancelDragging() {
-    if (!dragState) {
+    if (panInteraction) {
+      setPanInteraction(null);
+      return;
+    }
+
+    if (!dragState && !transformInteraction) {
+      setActiveGuides(EMPTY_GUIDES);
       return;
     }
 
     history.cancelTransaction();
+
     setDragState(null);
+    setTransformInteraction(null);
+    setActiveGuides(EMPTY_GUIDES);
   }
 
   function increaseSelectedElement() {
@@ -539,16 +827,137 @@ export function usePersonalizerEditor({
     history.cancelTransaction();
   }
 
+  function alignSelectedElement(position: Partial<Position>) {
+    if (!selectedElement || selectedElement.locked) {
+      return;
+    }
+
+    updateSelectedElement({
+      position: {
+        x: position.x ?? selectedElement.position.x,
+
+        y: position.y ?? selectedElement.position.y,
+      },
+    });
+  }
+
+  function alignSelectedElementLeft() {
+    alignSelectedElement({
+      x: ALIGNMENT_MINIMUM,
+    });
+  }
+
+  function alignSelectedElementHorizontalCenter() {
+    alignSelectedElement({
+      x: ALIGNMENT_CENTER,
+    });
+  }
+
+  function alignSelectedElementRight() {
+    alignSelectedElement({
+      x: ALIGNMENT_MAXIMUM,
+    });
+  }
+
+  function alignSelectedElementTop() {
+    alignSelectedElement({
+      y: ALIGNMENT_MINIMUM,
+    });
+  }
+
+  function alignSelectedElementVerticalCenter() {
+    alignSelectedElement({
+      y: ALIGNMENT_CENTER,
+    });
+  }
+
+  function alignSelectedElementBottom() {
+    alignSelectedElement({
+      y: ALIGNMENT_MAXIMUM,
+    });
+  }
+
+  function alignSelectedElementExactCenter() {
+    alignSelectedElement({
+      x: ALIGNMENT_CENTER,
+      y: ALIGNMENT_CENTER,
+    });
+  }
+
+  function setZoom(value: number) {
+    if (!Number.isFinite(value)) {
+      return;
+    }
+
+    const nextZoom = clamp(Math.round(value), MINIMUM_ZOOM, MAXIMUM_ZOOM);
+
+    setZoomState(nextZoom);
+
+    if (nextZoom <= 100) {
+      setPanPosition(INITIAL_PAN_POSITION);
+      setPanInteraction(null);
+    }
+  }
+
+  function zoomIn() {
+    setZoomState((current) => {
+      const safeCurrent = Number.isFinite(current) ? current : DEFAULT_ZOOM;
+
+      return clamp(safeCurrent + ZOOM_STEP, MINIMUM_ZOOM, MAXIMUM_ZOOM);
+    });
+  }
+
+  function zoomOut() {
+    setZoomState((current) => {
+      const safeCurrent = Number.isFinite(current) ? current : DEFAULT_ZOOM;
+
+      const nextZoom = clamp(
+        safeCurrent - ZOOM_STEP,
+        MINIMUM_ZOOM,
+        MAXIMUM_ZOOM,
+      );
+
+      if (nextZoom <= 100) {
+        setPanPosition(INITIAL_PAN_POSITION);
+        setPanInteraction(null);
+      }
+
+      return nextZoom;
+    });
+  }
+
+  function fitView() {
+    setZoomState(DEFAULT_ZOOM);
+    setPanPosition(INITIAL_PAN_POSITION);
+    setPanInteraction(null);
+  }
+
+  function activatePanMode() {
+    setIsSpacePressed(true);
+  }
+
+  function deactivatePanMode() {
+    setIsSpacePressed(false);
+
+    if (panInteraction) {
+      setPanInteraction(null);
+    }
+  }
+
   function undo() {
     history.undo();
     setSelectedElementId(null);
     setDragState(null);
+    setTransformInteraction(null);
+    setActiveGuides(EMPTY_GUIDES);
   }
 
   function redo() {
     history.redo();
     setSelectedElementId(null);
     setDragState(null);
+    setTransformInteraction(null);
+    setActiveGuides(EMPTY_GUIDES);
   }
 
   function resetDesign() {
@@ -561,6 +970,24 @@ export function usePersonalizerEditor({
 
     setSelectedElementId(newText.id);
     setDragState(null);
+    setActiveGuides(EMPTY_GUIDES);
+  }
+
+  function updateSelectedElementTransient(updates: Partial<EditorElement>) {
+    if (!selectedElementId) {
+      return;
+    }
+
+    setElementsTransient((current) =>
+      current.map((element) =>
+        element.id === selectedElementId
+          ? ({
+              ...element,
+              ...updates,
+            } as EditorElement)
+          : element,
+      ),
+    );
   }
 
   return {
@@ -572,6 +999,24 @@ export function usePersonalizerEditor({
     elements,
     selectedElement,
     selectedElementId,
+    activeGuides,
+
+    zoom,
+    setZoom,
+    zoomIn,
+    zoomOut,
+    fitView,
+
+    canZoomIn: zoom < MAXIMUM_ZOOM,
+    canZoomOut: zoom > MINIMUM_ZOOM,
+
+    panPosition,
+    isPanning: Boolean(panInteraction),
+    isPanModeActive: isSpacePressed,
+
+    activatePanMode,
+    deactivatePanMode,
+    startPanning,
 
     handleImageUpload,
     addTextElement,
@@ -586,6 +1031,18 @@ export function usePersonalizerEditor({
     stopDragging,
     cancelDragging,
     startDragging,
+    startScaling,
+    startRotating,
+
+    alignSelectedElementLeft,
+    alignSelectedElementHorizontalCenter,
+    alignSelectedElementRight,
+
+    alignSelectedElementTop,
+    alignSelectedElementVerticalCenter,
+    alignSelectedElementBottom,
+
+    alignSelectedElementExactCenter,
 
     increaseSelectedElement,
     decreaseSelectedElement,
@@ -688,19 +1145,20 @@ function normalizeRotation(rotation: number) {
   return ((rotation % 360) + 360) % 360;
 }
 
-function updateSelectedElementTransient(updates: Partial<EditorElement>) {
-  if (!selectedElementId) {
-    return;
-  }
+function getDistance(
+  pointerX: number,
+  pointerY: number,
+  centerX: number,
+  centerY: number,
+) {
+  return Math.hypot(pointerX - centerX, pointerY - centerY);
+}
 
-  setElementsTransient((current) =>
-    current.map((element) =>
-      element.id === selectedElementId
-        ? ({
-            ...element,
-            ...updates,
-          } as EditorElement)
-        : element,
-    ),
-  );
+function getAngle(
+  pointerX: number,
+  pointerY: number,
+  centerX: number,
+  centerY: number,
+) {
+  return Math.atan2(pointerY - centerY, pointerX - centerX) * (180 / Math.PI);
 }
